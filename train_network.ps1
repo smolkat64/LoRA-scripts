@@ -213,8 +213,6 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 	if ($save_precision -eq "float" -or $save_precision -eq "fp16" -or $save_precision -eq "bf16") { $run_parameters += " --save_precision=$save_precision" }
 	if ($debug_dataset -ge 1) { $run_parameters += " --debug_dataset"}
 	
-	sleep -s 1
-	
 	if ($abort_script -eq "n" -or $abort_script -eq 0)
 	{
 		if ($is_sd_v2_ckpt -le 0) { Write-Output "Stable Diffusion 1.x чекпоинт" }

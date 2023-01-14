@@ -133,9 +133,9 @@ Do you wish to optimize your script with torch dynamo?
 Do you want to use DeepSpeed?
 – **NO**
 What GPU(s) (by id) should be used for training on this machine as a comma-seperated list?
-–  **0** или **all**
+–  **0** or **all**
 Do you wish to use FP16 or BF16 (mixed precision)?
-– **fp16** или **bf16**
+– **fp16** or **bf16**
 !!! info BF16 > FP16
     If your hardware supports BF16, it is better to choose it.
 !!! info If PowerShell is throwing errors when pressing the arrows
@@ -212,7 +212,7 @@ First, make sure that the checkpoint file we are going to study, <name>.ckpt is 
 - [x] Generate Classification Images Using txt2img
 
 **Intervals**
-- Training Steps Per Image (Epochs): от 25 до 150.
+- Training Steps Per Image (Epochs): 25 to 150.
 `More is better, but it takes longer. The number of iterations for EVERY image.`
 - Pause After N Epochs 0
 - Amount of time to pause between Epochs (s) 0

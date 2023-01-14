@@ -283,3 +283,9 @@ A: Скачать [альтернативные библиотеки cuda](https
 
 Q: Не работает расширение для подгрузки сетей.
 A: Проверьте, чтобы не было аргумента *--lowvram* в *webui-user.bat*. С ним пока не работает.
+
+Q: У меня Windows 7 и PowerShell крашится.
+A: Установите [PowerShell 6](https://github.com/PowerShell/PowerShell/releases/tag/v6.2.6).
+
+Q: Сыпятся ошибки в консоли при выполнение скрипта!
+A: Обновите [PowerShell](https://github.com/PowerShell/PowerShell/releases).

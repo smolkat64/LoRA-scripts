@@ -1,0 +1,275 @@
+# LoRA guide
+-> by anons <-
+-> last update: 13.01.2023 <-
+-> [**Русская версия**](https://rentry.org/2chAI_LoRA_Dreambooth_guide)<-
+***
+## Table of contents
+[TOC]
+***
+## What is LoRA?
+
+[LoRA (Low-rank Adaptation for Fast Text-to-Image Diffusion Fine-tuning)](https://github.com/cloneofsimo/lora), according to the official repository, is the Stable Diffusion checkpoint fine-tuning method, which has the following features:
+
+- twice as fast as the DreamBooth method;
+- small output file size;
+- results are sometimes better than traditional fine-tuning.
+
+Requirements for successful work: NVidia video card, more than 6GB of VRAM.
+***
+## Usage
+
+There are currently two ways to use the LoRA network:
+1. Use as additional weights "on the fly"
+2. Merge with SD checkpoint
+
+#### Method 1 – "on the fly"
+!!! note This is the recommended way to use the LoRA.
+Install [extension by kohya-ss](https://github.com/kohya-ss/sd-webui-additional-networks) for A1111-webui.
+By default, network files are stored in the *stable-diffusion-webui\models\lora\\* directory.
+It's easy to use:
+1. Open a new panel | 2. Turn on, select model, adjust weights to taste
+------ | ------
+![](https://i.imgur.com/GvJhlWg.png) | ![](https://i.imgur.com/Ur9iFWk.png)
+
+#### Method 2 – merge with checkpoint
+Install [extension by d8ahazard](https://github.com/d8ahazard/sd_dreambooth_extension) for A1111-webui.
+!!! error CKPT vs SAFETENSORS
+    The safetensors files are not (yet) supported! Good news: ckpt can usually be downloaded from the same place where safetensors was downloaded.
+First, make sure that the checkpoint file *<model_name>.ckpt* is in the *stable-diffusion-webui\models\Stable-diffusion\\*, and the LoRA file *<lora_name>.pt* in *stable-diffusion-webui\models\lora\\*, then:
+
+1. Open a new tab | 2. Open the "Settings tab", click the "Use LORA checkbox"
+------ | ------
+![](https://i.imgur.com/LZzQvw1.png) | ![](https://i.imgur.com/OVPcD71.png)
+
+3. Go to the Create tab, select the source model "Source Checkpoint", select "Lora Model" on the left, and click "Generate Ckpt" at the top |
+------ |
+![](https://c2n.me/4hzbzyn.jpg) |
+***
+## Preparing a dataset
+
+!!! info Advice №1
+	If you train for anime model (NAI, AnythingV3), make the description strictly in the style of Danbooru/Gelbooru tags. For example, *1girl, short hair, green eyes, black hair, school uniform...*.
+	If you are using SD 1.x/2.x, in the captions write what you see in the image. For example, if the image is a picture of a bearded fisherman at work, write *pencil art of a man fishing, beard*; if it is a picture of your smiling friend wearing glasses, red shirt, sunset in the background, write *photo of friend_name, smiling, wearing glasses, red shirt, sunset in the background*)
+!!! info Advice №2
+	If you are training a character/person, it is desirable that the dataset consist only of the images where he is present. And all captions should have a keyword describing this character/person. For example, 1.txt: *photo of JohnFriend, jacket, jeans*; 2.txt: *photo of JohnFriend, shorts, t-shirt*. You will use the tag *JohnFriend* to call this person in the prompt. The same works for anime models - in this case it will be the name of the character. For example, *1girl, shiina mayuri, short hair, green eyes*, etc. Call out with *shiina mayuri*, respectively.
+	If you are training an author's style, as in the previous paragraph, it is advisable that the dataset consist only of images drawn by this author. Example of caption file: *ArtistName, mountains, night, moon, snowy peaks, stars*, etc. Calling the artist's style via *ArtistName*.
+!!! info Advice №3
+    All the bits of other people's limbs, strange objects in the picture, artists' signatures, links – anything you **don't** want to see in the generation is better trimmed or masked in image editor.
+!!! info Advice №4
+    To speed up manual tagging you can use [sd-tagging-helper](https://github.com/arenatemp/sd-tagging-helper/).
+	There is also [separate software](https://github.com/starik222/BooruDatasetTagManager) and extensions ([1](https://github.com/toshiaki1729/stable-diffusion-webui-dataset-tag-editor), [2](https://github.com/toriato/stable-diffusion-webui-wd14-tagger), [3](https://github.com/SesuMoe/sd-tagger-webui)) for A1111-webui.
+	You can use [Grabber](https://github.com/Bionus/imgbrd-grabber/releases) with [these settings](https://i.imgur.com/XHvfAkj.png) to download images from various booru boards along with tags.
+	
+***
+#### Method 1 – preparing a dataset for the script
+
+Dataset needs a certain folder structure:
+
+-> ![Example folder structure](https://i.imgur.com/hJsmBzK.png) <-
+-> Example folder structure <-
+
+Where **n** – number of *repeats* of the given concept; **conceptA**, **conceptB** – concept names. The concept name can be anything, it is not used anywhere (except in a special case, see *Important notes*), it is rather a note for you what is in this folder. There must be an underscore between the number of repetitions and the concept name. Inside each concept folder there must be images along with \*.txt description files, their names must match. Inside the text files must be the actual description. There can be as many concept folders as you like, but at least one must be present. **Cropping images is not necessary**.
+[Example of a good dataset](https://mega.nz/folder/lMQyDTTB#0XM9piheaxg-a9TI7vuDJQ/folder/8cw2nKbT)
+!!! warning Important notes
+	If a *image.png* file doesn't have a corresponding *image.txt*, the script [gives it a description as a concept name](https://github.com/kohya-ss/sd-scripts/blob/main/library/train_util.py#L513). For example, if the concept folder is named *6_photo*, it will assume that the *image.png* file has a *photo* description.
+	Supported image formats: *\*.jpg*, *\*.png*, *\*.webp*. Make sure you don't accidentally get *\*.jpeg*.
+
+**Repeats** are needed to give more *weight* to a particular folder. For example, you have a *2_HighRes* folder with 20 images inside and a *1_LowRes* folder with 10 images inside. That would add up to 50 (2 \* 20 + 1 \* 10) images, and the neural network would learn 80% (2 \* 20 / 50) of the time on the first folder and 20% (1 \* 10 / 50) of the time on the second, thereby reducing the impact of the folder with low quality images.
+
+The *regularization_images* folder can be empty, the presence of regularization images is optional.
+[**Regularization images**](https://github.com/d8ahazard/sd_dreambooth_extension/wiki/Basics#dreambooth) help improve training accuracy.
+!!! info How to work with them
+	For example, if you are training a person's face (a man) and every description file has the words *photo of a PersonName* in it, it's a good idea to open the WebUI and generate images with the prompt *photo of a man*. How many? At least as many as the number of images of the man's face in the example.
+
+***
+#### Method 2 – creating a dataset for sd_dreambooth_extension
+
+!!! warning The interface supports up to 3 concepts at a time.
+    If you want to train more concepts, you have to mess around with JSON. [Example JSON](https://pastebin.com/kq02jzHD) for more than 3 concepts. Note the **missing** comma after the last concept.
+
+The dataset for sd_dreambooth_extension has no special requirements to the folder structure.
+One rule is that there is a separate folder for each concept (object, character, style, tag) that you teach the model to.
+The folder can contain any number of images in PNG format (not required, but strictly recommended for some reason).
+Images **must** be square, without transparency, resolution – 512x512.
+Each image should be accompanied by a text file with a description (tags).
+The presence of underscores in the tags does not matter, but since they consume tokens, I recommend to drop all underscores.
+-> ![Example contents of a concept folder](https://c2n.me/4hz6XA5.jpg) <-
+-> Example contents of a concept folder <-
+
+***
+## Training
+
+#### Method 1 – script
+1. Clone the [sd-scripts repository by kohya-ss](https://github.com/kohya-ss/sd-scripts) or download it and unpack somewhere
+2. Download [script (retard-friendly)](https://pastebin.com/8XKAMFvY) (last update: 13.01.2023 11:43 UTC)
+!!! info PowerShell
+	This script is for PowerShell, but that does not mean that it is only available to users of the latest versions of Windows. Not everyone knows this, but [PowerShell is available for all versions of Windows starting with XP, on Linux, and on macOS](https://github.com/PowerShell/PowerShell/releases).
+3. Open PowerShell and execute the following commands one by one::
+```powershell
+cd <path to sd-scripts>
+
+python -m venv --system-site-packages venv
+.\venv\Scripts\activate
+
+pip install torch==1.12.1+cu116 torchvision==0.13.1+cu116 --extra-index-url https://download.pytorch.org/whl/cu116
+pip install --upgrade -r requirements.txt
+pip install -U -I --no-deps https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/f/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl
+
+cp .\bitsandbytes_windows\*.dll .\venv\Lib\site-packages\bitsandbytes\
+cp .\bitsandbytes_windows\cextension.py .\venv\Lib\site-packages\bitsandbytes\cextension.py
+cp .\bitsandbytes_windows\main.py .\venv\Lib\site-packages\bitsandbytes\cuda_setup\main.py
+
+accelerate config
+```
+4. After the last command the terminal will start asking questions, select the following:
+In which compute environment are you running? 
+– **This machine**
+Which type of machine are you using?
+– **No distributed training**
+Do you want to run your training on CPU only (even if a GPU is available)?
+– **NO**
+Do you wish to optimize your script with torch dynamo?
+– **NO**
+Do you want to use DeepSpeed?
+– **NO**
+What GPU(s) (by id) should be used for training on this machine as a comma-seperated list?
+–  **0** или **all**
+Do you wish to use FP16 or BF16 (mixed precision)?
+– **fp16** или **bf16**
+!!! info BF16 > FP16
+    If your hardware supports BF16, it is better to choose it.
+!!! info If PowerShell is throwing errors when pressing the arrows
+	Turn off NumLock on your keyboard, use the 8 and 2 keys on numpad to select options. [If you don't have a numpad](https://i.imgur.com/ARViwie.png).
+
+5. Editing the script
+Open the script with any text editor and change the variables at the top of the file to suit your needs. All variables are clearly enough commented, so let's walk through the not-so-obvious ones:
+
+```powershell
+$train_batch_size = 1
+$num_epochs = 10
+$max_token_length = 75
+$clip_skip = 1
+```
+
+**$train_batch_size**: if you increase this value, it probably also requires [increasing *$learning_rate*](https://github.com/cloneofsimo/lora/discussions/53#discussioncomment-4437440).
+**$num_epochs**: there is no definite answer to the question of how much to set, the dataset and other settings play an equally important role. More epochs means more time to train, but a large value will not necessarily make the network better. At a certain point in training, accuracy will almost stop increasing, so putting an insanely high value makes no sense. You can start with 5. I recommend leaving the settings as they are the first time and testing all 10 epochs on the same seed to see how many are needed.
+**$max_token_length**: open your largest description file, copy its contents and put it into the WebUI Promt. The counter on the right will display the length of the token. If less than 75, put 75. If more than 75 – put 150. If greater than 150, then put 225. Values greater than 225 are not supported by the script (yet).
+**$clip_skip**: 1 for SD-based checkpoints, 2 for NAI-based checkpoints.
+
+```powershell
+$learning_rate = 1e-4
+$unet_lr = $learning_rate
+$text_encoder_lr = $learning_rate
+$scheduler = "cosine_with_restarts"
+$save_precision = "fp16"
+$mixed_precision = "fp16"
+$network_dim = 128
+```
+
+**$learning_rate**: 1e-4 is recommended for checkpoints based on SD 1.x. For 2.x - it is unclear, someone says that [got terrible results with these settings](https://github.com/d8ahazard/sd_dreambooth_extension/issues/486#issuecomment-1345884109). But I got decent faces at the recommended settings as well.
+What is the difference between high and low speed? There is even a separate [website](https://losslandscape.com/explorer) which clearly shows this: at too low speed the learning gets stuck and the network learns nothing, at too high speed unpredictable but unlikely good things happen.
+**$unet_lr**: U-Net learning rate. [Field for experimentation](https://github.com/cloneofsimo/lora/discussions/69).
+**$text_encoder_lr**: Some people advise to halve the learning rate of the text encoder relative to the learning_rate (i.e. to a value of 5e-5), saying that this gives better results. Field for experimentation.
+**$scheduler**: field for experimentation.
+![](https://files.catbox.moe/ffqtuq.png)
+-> (The grid will be redone because I forgot to disable random seed and --shuffle_caption)<-
+
+**$network_dim**: values can be different (I saw someone training at 1024), but it was found that values above 128/256 do not make a big difference. The higher the value, the higher the video memory consumption and output file size.
+**$save_precision, $mixed_precision**: As said before, bf16 > fp16, so if your hardware allows it, go for it.
+
+6. Running the script
+!!! note If it does not launch by double-clicking
+	In the script folder, click in the free space \-> "Open in Terminal" \-> enter *.\train_network.ps1* and press Enter.
+
+***
+#### Method 2 – sd_dreambooth_extension
+!!! error MAY not work on graphics cards with less than 10GB VRAM. Expect updates.
+!!! error CKPT vs SAFETENSORS
+    The safetensors files are not (yet) supported! Good news: ckpt can usually be downloaded from the same place where safetensors was downloaded.
+First, make sure that the checkpoint file we are going to study, <name>.ckpt is in the path *stable-diffusion-webui\models\Stable-diffusion\\*, then:
+
+1. Open a new tab | 2. Open the Settings tab, click the "Performance Wizard (WIP)" button, and check the "Use LORA" checkbox
+:----: | :----:
+![](https://i.imgur.com/LZzQvw1.png) | ![](https://i.imgur.com/OVPcD71.png)
+**3. Go to the Create tab, come up with a name, select the source model "Source Checkpoint" and click Create Model** |
+![](https://c2n.me/4hz7Bki.jpg)
+
+-> **4. Check the settings (from top to bottom):** <-
+
+**General**
+- [x] Use LORA
+- [ ] Train Imagic Only
+- [x] Generate Classification Images Using txt2img
+
+**Intervals**
+- Training Steps Per Image (Epochs): от 25 до 150.
+`More is better, but it takes longer. The number of iterations for EVERY image.`
+- Pause After N Epochs 0
+- Amount of time to pause between Epochs (s) 0
+- Save Model Frequency (Epochs) 
+`The more often the model is saved, the more choice from the younger versions, if the newer ones started to go fucked up`
+- Save Preview(s) Frequency (Epochs) 
+`The more often the previews are saved, the faster you can see that the model is overtrained and starting to get fucked up`
+!!! info Both "Save" items slow down learning because they essentially suspend it for their own business.
+    Set equal values from 5 to 25.
+
+**Batching**
+- Batch Size 1
+- Gradient Accumulation Steps 1
+- Class Batch Size 1
+- [x] Set Gradients to None When Zeroing
+- [x] Gradient Checkpointing 
+
+**Learning Rate**
+!!! note Leave the whole "Learning Rate" section unchanged.
+
+**Image Processing**
+- Resolution 512
+- [ ] Center Crop
+`Images must be cropped beforehand and meaningfully`
+- [x] Apply Horizontal Flip
+`Not recommended for asymmetrical characters`
+- Sanity Sample Prompt – leave blank.
+- Sanity Sample Seed 420420 for luck.
+
+**Miscellaneous**
+- Pretrained VAE Name or Path оставляем пустым.
+- [ ] Use Concepts List
+!!! warning The "Use Concepts List" checkbox has priority over the settings in the "Concepts" tab.
+    "Use Concepts List" should be **unchecked** for 3 or fewer concepts and customize them through the interface, as described below. If using JSON for 3+ concepts, put the full path to the file into the "Concepts List" and check the box.
+
+- API Key – leave blank.
+- Discord Webhook – leave blank.
+
+-> **5. Open the Advanced submenu at the bottom and check the settings:** <-
+!!! info BF16 > FP16
+    If your hardware supports BF16, it is better to choose it.
+!!! info Max Token Length
+    Open your largest description file, copy its contents and put it into the WebUI promt. The counter on the right will display the length of the token. If less than 75, put 75. If more than 75 – put 150. If more than 150, then put 225. The maximum value is 300.
+!!! info Clip Skip    
+    1 for SD-based checkpoints, 2 for NAI-based checkpoints.
+-> ![](http://c2n.me/4hzQ3DS.jpg) <-
+
+-> **6. Go to the Concepts tab and configure the concepts:** <-
+
+[Example of a configured concept](http://c2n.me/4hzbMWW.jpg) (long screenshot), set only the path to the folder with images and [filewords] in the fields "Instance Token", "Class Token", "Instance Prompt", "Class Prompt" and "Sample Image Prompt". All other settings remain (but compare with the screenshot, just in case).
+
+-> **7. In the "Saving" tab enable saving of LoRA pt-files:** <-
+
+- [x] Generate lora weights when saving during training.
+- [x] Generate lora weights when training completes.
+- [x] Generate lora weights when training is canceled.
+
+!!! note After that, click "Save Settings" at the top and start the training with the "Train" button.
+    The previews are saved in the *stable-diffusion-webui\models\dreambooth\<model_name>\samples\\* folder. The pt files are stored in *stable-diffusion-webui\models\lora\\*.
+
+## Troubleshooting (script)
+
+Q: There's some kind of problem with CUDA.
+A: Probably not installed [CUDA Toolkit](https://developer.nvidia.com/cuda-11-6-0-download-archive?target_os=Windows&target_arch=x86_64&target_version=11).
+
+Q: I have a 10-series card and I get an error when I start train. What to do?
+A: Download [alternative cuda libraries](https://github.com/james-things/bitsandbytes-prebuilt-all_arch), rename the file *libbitsandbytes_cudaall.dll* to *libbitsandbytes_cuda116.dll*, put it in *sd-scripts\svenv\Lib\site-packages\bitsandbytes\\* (overwrite).
+
+Q: The extension for loading LoRA networks does not work.
+A: Make sure that there is no *--lowvram* argument in *webui-user.bat*. It's not working yet.

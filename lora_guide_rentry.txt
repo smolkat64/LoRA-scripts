@@ -1,0 +1,275 @@
+# Гайд по LoRA
+-> by anons <-
+-> последнее обновление: 13.01.2023 <-
+-> [**English version**](https://rentry.org/2chAI_LoRA_Dreambooth_guide_english) <-
+***
+## Содержание
+[TOC]
+***
+## Что это
+
+[LoRA (Low-rank Adaptation for Fast Text-to-Image Diffusion Fine-tuning)](https://github.com/cloneofsimo/lora), согласно официальному репозиторию — метод файн-тьюнинга Stable Diffusion чекпоинтов, который имеет следующие особенности:
+
+- вдвое быстрее чем метод DreamBooth;
+- маленький размер выходного файла;
+- результаты иногда лучше, чем у традиционного файн-тьюнинга.
+
+Требования для успешной работы: видеокарта Nvidia, не меньше 6Гб видеопамяти.
+***
+## Использование
+
+На данный момент есть два способа использования сети LoRA:
+1. Использовать в качестве дополнительных весов "на лету"
+2. Замерджить вместе с SD чекпоинтом
+
+#### Способ 1 – кручение на лету а-ля HyperNetwork
+!!! note Это рекомендованный способ использования LoRA.
+Установить [расширение от kohya-ss](https://github.com/kohya-ss/sd-webui-additional-networks) для A1111-webui.
+По умолчанию файлы сетей хранятся в папке *stable-diffusion-webui\models\lora\\*
+Пользоваться просто:
+1. Открыть новую панель | 2. Включить, выбрать модель, настроить веса по вкусу
+------ | ------
+![](https://i.imgur.com/GvJhlWg.png) | ![](https://i.imgur.com/Ur9iFWk.png)
+
+#### Способ 2 – патч модели
+Установить [расширение от d8ahazard](https://github.com/d8ahazard/sd_dreambooth_extension) для A1111-webui.
+!!! error CKPT vs SAFETENSORS
+    Файлы safetensors (пока) не поддерживаются! Из хороших новостей: обычно ckpt можно скачать там же, где качали safetensors.
+Для начала удостоверьтесь, что исходный файл сети *<model_name>.ckpt* лежит по пути *stable-diffusion-webui\models\Stable-diffusion\\*, а файл LoRA *<lora_name>.pt* в *stable-diffusion-webui\models\lora\\*, затем:
+
+1. Открыть новую вкладку | 2. Открыть вкладку Settings, нажать чекбокс Use LORA
+------ | ------
+![](https://i.imgur.com/LZzQvw1.png) | ![](https://i.imgur.com/OVPcD71.png)
+
+3. Перейти на вкладку Create, выбрать исходную модель "Source Checkpoint", выбрать слева "Lora Model" и нажать наверху "Generate Ckpt" |
+------ |
+![](https://c2n.me/4hzbzyn.jpg) |
+***
+## Подготовка датасета
+
+!!! info Совет №1
+	Если тренируете на основе аниме моделей (NAI, AnythingV3), описание делать строго в стиле Danbooru/Gelbooru тэгов. Например, *1girl, short hair, green eyes, black hair, school uniform...*
+	Если тренируете на основе SD 1.x/2.x, в описаниях пишите что вы видите на изображении. Например, если изображение – рисунок бородатого рыбака за работой, пишите *pencil art of a man fishing, beard*; если это фото вашего улыбающегося друга в очках и красной рубашке на фоне заката, пишите *photo of friend_name, smiling, wearing glasses, red shirt, sunset in the background*)
+!!! info Совет №2
+	Если тренируете персонажа/человека, желательно чтобы датасет состоял только из изображений, где он присутствует. И чтобы во всех описаниях было ключевое слово, описывающее этого персонажа/человека. Например, 1.txt: *photo of AndrewFriend, jacket, jeans*; 2.txt: *photo of AndrewFriend, shorts, t-shirt*. Вызывать вы данного человека в промте будете соответственно через тег *AndrewFriend*. Тоже самое работает и для аниме моделей – в этом случае это будет имя персонажа. Например, *1girl, shiina mayuri, short hair, green eyes* и т.д. Вызов через *shiina mayuri* соответственно.
+	Если тренируете авторский стиль, как и в предыдущем абзаце желательно чтобы датасет состоял только из изображений, нарисованных данным автором. Пример описания: *ArtistName, mountains, night, moon, snowy peaks, stars* и т.д. Вызов стиля художника через *ArtistName*.
+!!! info Совет №3
+    Все ошметки чужих конечностей, непонятные объекты на картинке, подписи художников, ссылки – все, что вы **не** хотите видеть в генерациях, лучше обрезать или замазать в фотошопе.
+!!! info Совет №4
+    Для ускорения ручного тегирования можно использовать [мокропиську](https://github.com/arenatemp/sd-tagging-helper/).
+	Еще есть [отдельная софтина](https://github.com/starik222/BooruDatasetTagManager) и расширения ([1](https://github.com/toshiaki1729/stable-diffusion-webui-dataset-tag-editor), [2](https://github.com/toriato/stable-diffusion-webui-wd14-tagger), [3](https://github.com/SesuMoe/sd-tagger-webui)) для A1111-webui.
+	Для скачивания изображений с различных booru-досок вместе с тегами можно использовать [Grabber](https://github.com/Bionus/imgbrd-grabber/releases) с [такими настройками](https://i.imgur.com/XHvfAkj.png).
+	
+***
+#### Способ 1 – создание датасета для скрипта
+
+Датасету необходима определённая структура папок:
+
+-> ![Пример структуры папок](https://i.imgur.com/hJsmBzK.png) <-
+-> Пример структуры папок <-
+
+Где **n** – количество *повторений* данного концепта; **conceptA**, **conceptB** – имена концептов. Имя концепта может быть любое, оно нигде не используется (кроме особого случая, см. *Важные замечания*), это скорее заметка для вас, что в этой папке находится. Между количеством повторений и именем концепта обязательно наличие нижнего подчеркивания. Внутри каждой папки концепта должны присутствовать изображения вместе с файлами описания в формате \*.txt, их имена должны совпадать. Внутри текстовых файлов должно быть, собственно, описание. Папок концептов может быть сколько угодно, но хотя бы одна должна присутствовать. **Обрезать изображения необязательно**.
+[Пример хорошего датасета](https://mega.nz/folder/lMQyDTTB#0XM9piheaxg-a9TI7vuDJQ/folder/8cw2nKbT)
+!!! warning Важные замечания
+	Если у файла *image.png* не будет соответствующего *image.txt*, скрипт [выдаст ему описание в виде имени концепта](https://github.com/kohya-ss/sd-scripts/blob/main/library/train_util.py#L513). Например, если папка концепта называется *6_photo*, будет считаться, что у файла *image.png* описание *photo*.
+	Поддерживаемые форматы изображений: *\*.jpg*, *\*.png*, *\*.webp*. Смотрите чтобы не попался *\*.jpeg*.
+
+**Повторения** нужны чтобы придать больше *веса* той или иной папке. Например, у вас есть папка *2_HighRes* с 20 изображениями внутри и папка *1_LowRes* с 10 изображениями внутри. Суммарно это даст 50 (2 \* 20 + 1 \* 10) изображений, и нейронная сеть будет обучаться 80% (2 \* 20 / 50) времени на первой папке и 20% (1 \* 10 / 50) времени на второй, тем самым уменьшая влияние папки с низкокачественными изображениями.
+
+Папка *regularization_images* может быть пустой, наличие регуляризационных изображений необязательно.
+[**Регуляризационные изображения**](https://github.com/d8ahazard/sd_dreambooth_extension/wiki/Basics#dreambooth) помогают улучшить точность тренировки.
+!!! info Как с ними работать
+	Например, если вы тренируете лицо человека (мужчины) и в каждом файле описания есть слова *photo of a PersonName*, хорошей идеей будет открыть WebUI и нагенерировать изображений по запросу *photo of a man*. Сколько? Не меньше чем количество изображений лица мужчины из примера.
+
+***
+#### Способ 2 – создание датасета для sd_dreambooth_extension
+
+!!! warning В интерфейсе поддерживается до 3 концептов включительно
+    Если вы хотите тренировать больше концептов, придется возиться с JSON.  [Пример JSON](https://pastebin.com/kq02jzHD) больше, чем на 3 концепта. Обратите внимание на **отстуствие** запятой после последнего концепта.
+
+У датасета для sd_dreambooth_extension нет особых требований к структуре папок.
+Правило одно - на каждый концепт (объект, персонажа, стиль, тег) которому вы учите модель - отдельная папка.
+В папке может быть любое количество изображений в формате PNG (не обязательно, но почему-то строго рекомендуется).
+Изображения **должны** быть квадратными, без прозрачности, разрешение - 512х512.
+К каждому изображению должен прилагаться текстовый файл с описанием (тегами).
+Наличие нижних подчеркиваний в тегах значения не имеет, но поскольку они жрут токены, рекомендую от всех нижних подчеркиваний отказаться.
+-> ![Пример содержимого папки концепта](https://c2n.me/4hz6XA5.jpg) <-
+-> Пример содержимого папки концепта <-
+
+***
+## Тренировка
+
+#### Способ 1 – скрипт
+1. Клонировать репозиторий [sd-scripts от kohya-ss](https://github.com/kohya-ss/sd-scripts) или скачать его
+2. Скачать [скрипт](https://pastebin.com/iwuvZfQq) (обновлено: 13.01.2023 14:43 по МСК)
+!!! info PowerShell
+	Данный скрипт предназначен для PowerShell, но это не значит что он доступен только пользователям последних версий Windows. Не все знают, но [PowerShell доступен для всех версий Windows начиная с XP, на Linux, а также на macOS](https://github.com/PowerShell/PowerShell/releases).
+3. Открыть PowerShell и поочерёдно выполнить следующие команды:
+```powershell
+cd <путь к папке sd-scripts>
+
+python -m venv --system-site-packages venv
+.\venv\Scripts\activate
+
+pip install torch==1.12.1+cu116 torchvision==0.13.1+cu116 --extra-index-url https://download.pytorch.org/whl/cu116
+pip install --upgrade -r requirements.txt
+pip install -U -I --no-deps https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/f/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl
+
+cp .\bitsandbytes_windows\*.dll .\venv\Lib\site-packages\bitsandbytes\
+cp .\bitsandbytes_windows\cextension.py .\venv\Lib\site-packages\bitsandbytes\cextension.py
+cp .\bitsandbytes_windows\main.py .\venv\Lib\site-packages\bitsandbytes\cuda_setup\main.py
+
+accelerate config
+```
+4. После последней команды терминал начнёт задавать вопросы, выбрать следующее:
+In which compute environment are you running? 
+– **This machine**
+Which type of machine are you using?
+– **No distributed training**
+Do you want to run your training on CPU only (even if a GPU is available)?
+– **NO**
+Do you wish to optimize your script with torch dynamo?
+– **NO**
+Do you want to use DeepSpeed?
+– **NO**
+What GPU(s) (by id) should be used for training on this machine as a comma-seperated list?
+–  **0** или **all**
+Do you wish to use FP16 or BF16 (mixed precision)?
+– **fp16** или **bf16**
+!!! info BF16 > FP16
+    Если железо поддерживает BF16, лучше выбрать его.
+!!! info Если PowerShell сыпет ошибками при нажатии на стрелочки
+	Выключить NumLock на клавиатуре, выбирать варианты при помощи кнопок 8 и 2 на нампаде. [Если нампада нет](https://i.imgur.com/ARViwie.png).
+
+5. Редактирование скрипта
+Открыть скрипт любым текстовым редактором и изменить переменные вверху файла под свои нужды. Все переменные достаточно понятно прокоментированы, поэтому пройдёмся по не самым очевидным из них:
+
+```powershell
+$train_batch_size = 1
+$num_epochs = 10
+$max_token_length = 75
+$clip_skip = 1
+```
+
+**$train_batch_size**: при увеличении данного значения, вероятно также требуется [увеличение *$learning_rate*](https://github.com/cloneofsimo/lora/discussions/53#discussioncomment-4437440).
+**$num_epochs**: на вопрос сколько нужно ставить однозначного ответа нет, не менее важную роль играют датасет и другие настройки. Больше эпох – больше времени на тренировку, но большое значение не обязательно сделает сеть лучше. В определенный момент тренировки точность практически перестанет расти, поэтому ставить безумно большое значение не имеет смысла. Можно начать с 5. Рекомендую в первый раз оставить настройки как есть и протестировать все 10 эпох на одном сиде, чтобы посмотреть, сколько их примерно нужно.
+**$max_token_length**: откройте свой самый большой файл описания, скопируйте его содержимое и поместите в промт WebUI. Справа на счетчике отобразится длина токена. Если меньше 75, ставим 75. Если больше 75 – ставьте 150. Если больше 150 – ставьте 225. Значения больше 225 скрипт не поддерживает.
+**$clip_skip**: 1 для SD-основанных чекпоинтов, 2 для NAI-основанных.
+
+```powershell
+$learning_rate = 1e-4
+$unet_lr = $learning_rate
+$text_encoder_lr = $learning_rate
+$scheduler = "cosine_with_restarts"
+$save_precision = "fp16"
+$mixed_precision = "fp16"
+$network_dim = 128
+```
+
+**$learning_rate**: значение 1e-4 рекомендовано для чекпоинтов, основанных на SD 1.x. Для 2.x – непонятно, кто-то говорит что [получил ужасные результаты с такими настройками](https://github.com/d8ahazard/sd_dreambooth_extension/issues/486#issuecomment-1345884109). Но у меня получались достойные лица и на рекомендованных настройках.
+В чем отличие высокой и низкой скорости? Существует даже отдельный [сайт](https://losslandscape.com/explorer), в котором это наглядно показано: на слишком низкой скорости обучение застревает и сеть ничему не обучается, на слишком большой происходят непредсказуемые, но вряд ли хорошие вещи.
+**$unet_lr**: скорость обучения U-Net. [Поле для экспериментов](https://github.com/cloneofsimo/lora/discussions/69).
+**$text_encoder_lr**: некоторые советуют уменьшать скорость обучения текстового энкодера в два раза относительно learning_rate (т.е. до значения 5e-5), мол, так результаты лучше. Поле для экспериментов.
+**$scheduler**: поле для экспериментов.
+![](https://files.catbox.moe/ffqtuq.png)
+-> (сетка будет переделана, т.к. забыл отключить рандомный сид и --shuffle_caption)<-
+
+**$network_dim**: значения могут быть разные (видел кто-то тренировал на 1024), но было установлено, что выше 128/256 особого смысла лезть нет. Чем больше значение, тем больше расход видеопамяти.
+**$save_precision, $mixed_precision**: как было сказано ранее, bf16 > fp16, поэтому если позволяет железо – ставьте.
+
+6. Запуск скрипта
+!!! note Если не открывается по двойному щелчку
+	В папке со скриптом ПКМ в свободном месте \-> "Открыть в Терминале" \-> ввести *.\train_network.ps1* и нажать Enter.
+
+***
+#### Способ 2 – sd_dreambooth_extension
+!!! error ВОЗМОЖНО не работает на видеокартах с менее чем 10ГБ VRAM. Ожидайте дополнений.
+!!! error CKPT vs SAFETENSORS
+    Файлы safetensors (пока) не поддерживаются! Из хороших новостей: обычно ckpt можно скачать там же, где качали safetensors.
+Для начала удостоверьтесь, что исходный файл сети, на которой будем учиться, <name>.ckpt лежит по пути *stable-diffusion-webui\models\Stable-diffusion\\*, затем:
+
+1. Открыть новую вкладку | 2. Открыть вкладку Settings, нажать кнопку "Performance Wizard (WIP)" и проверить, что стоит чекбокс "Use LORA"
+:----: | :----:
+![](https://i.imgur.com/LZzQvw1.png) | ![](https://i.imgur.com/OVPcD71.png)
+**3. Перейти на вкладку Create, придумать название, выбрать исходную модель "Source Checkpoint" и нажать Create Model** |
+![](https://c2n.me/4hz7Bki.jpg)
+
+->  **4. Проверить настройки (сверху вниз):** <-
+
+**General**
+- [x] Use LORA
+- [ ] Train Imagic Only
+- [x] Generate Classification Images Using txt2img
+
+**Intervals**
+- Training Steps Per Image (Epochs): от 25 до 150.
+`Больше – лучше, но дольше. Количество итераций НА КАЖДОЕ изображение.`
+- Pause After N Epochs 0
+- Amount of time to pause between Epochs (s) 0
+- Save Model Frequency (Epochs) 
+`Чем чаще сохраняется модель, тем больше выбор из младших версий, если более новые начали идти по пизде`
+- Save Preview(s) Frequency (Epochs) 
+`Чем чаще сохраняются превью, тем быстрее можно увидеть, что модель перетренирована и начала идти по пизде`
+!!! info Оба пункта "Save" замедляют обучение, потому что по-сути приостанавливают его для своих дел.
+    Устанавливаем равные значения от 5 до 25.
+
+**Batching**
+- Batch Size 1
+- Gradient Accumulation Steps 1
+- Class Batch Size 1
+- [x] Set Gradients to None When Zeroing
+- [x] Gradient Checkpointing 
+
+**Learning Rate**
+!!! note Весь раздел "Learning Rate" оставляем без изменений.
+
+**Image Processing**
+- Resolution 512
+- [ ] Center Crop
+`Изображения должны быть заранее и осмысленно обрезаны`
+- [x] Apply Horizontal Flip
+`Не рекомендуется для несимметричных персонажей`
+- Sanity Sample Prompt оставляем пустым.
+- Sanity Sample Seed оставляем 420420 на удачу.
+
+**Miscellaneous**
+- Pretrained VAE Name or Path оставляем пустым.
+- [ ] Use Concepts List
+!!! warning Галка "Use Concepts List" имеет приоритет перед настройками во вкладке "Concepts".
+    "Use Concepts List" нужно **убрать** для 3 и меньше концептов и их настройки через интерфейс, как описано далее. Если используете JSON на 3+ концептов, вставляйте полный путь до файла в "Concepts List" и ставьте галку.
+
+- API Key оставляем пустым.
+- Discord Webhook оставляем пустым.
+
+-> **5. РАЗВОРАЧИВАЕМ внизу подменю Advanced и сверяем настройки:** <-
+!!! info BF16 > FP16
+    Если железо поддерживает BF16, лучше выбрать его.
+!!! info Max Token Length
+    Откройте свой самый большой файл описания, скопируйте его содержимое и поместите в промт WebUI. Справа на счетчике отобразится длина токена. Если меньше 75, ставим 75. Если больше 75 – ставьте 150. Если больше 150 – ставьте 225. Максимальное значение – 300.
+!!! info Clip Skip    
+    1 для SD-основанных чекпоинтов, 2 для NAI-основанных.
+-> ![](http://c2n.me/4hzQ3DS.jpg) <-
+
+-> **6. Переходим во вкладку Concepts и настраиваем концепты:** <-
+
+[Пример настроенного концепта](http://c2n.me/4hzbMWW.jpg) (длинный скриншот), устанавливаем только путь до папки с изображениями и [filewords] в поля "Instance Token", "Class Token", "Instance Prompt", "Class Prompt" и "Sample Image Prompt". Все остальные настройки оставляем (но на всякий случай сверьте со скриншотом).
+
+-> **7. Во вкладке "Saving" включаем сохранение LORA pt-файлов:** <-
+
+- [x] Generate lora weights when saving during training.
+- [x] Generate lora weights when training completes.
+- [x] Generate lora weights when training is canceled.
+
+!!! note После этого нажимаем наверху "Save Settings" и запускаем обучение кнопкой "Train".
+    Превью сохраняются в папку stable-diffusion-webui\models\dreambooth\НАЗВАНИЕМОДЕЛИ\samples\. Файлы pt ложатся в stable-diffusion-webui\models\lora\.
+
+## Решение проблем со скриптом
+
+Q: Какие-то проблемы с CUDA.
+A: Вероятно не установлен [CUDA Toolkit](https://developer.nvidia.com/cuda-11-6-0-download-archive?target_os=Windows&target_arch=x86_64&target_version=11).
+
+Q: У меня карточка 10-й серии и у меня вываливает ошибку при запуске тренировки. Что делать?
+A: Скачать [альтернативные библиотеки cuda](https://github.com/james-things/bitsandbytes-prebuilt-all_arch), файл *libbitsandbytes_cudaall.dll* переименовать в *libbitsandbytes_cuda116.dll*, поместить по пути *sd-scripts\venv\Lib\site-packages\bitsandbytes\\* с заменой.
+
+Q: Не работает расширение для подгрузки сетей.
+A: Проверьте, чтобы не было аргумента *--lowvram* в *webui-user.bat*. С ним пока не работает.

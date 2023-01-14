@@ -8,14 +8,14 @@ $sd_scripts_dir = "X:\git-repos\sd-scripts\" # Path to kohya-ss/sd-scripts repos
 
 $ckpt = "X:\SD-models\checkpoint.safetensors" # Path to checkpoint (ckpt / safetensors)
 $is_sd_v2_ckpt = 0 # '1' if loading SD 2.x ckeckpoint
-$is_sd_v2_768_ckpt = 0 # '1', if loding SD 2.x-768 checkpoint
+$is_sd_v2_768_ckpt = 0 # '1', if loading SD 2.x-768 checkpoint
 $image_dir = "X:\training_data\img\" # Path to training images folder
 $reg_dir = "X:\training_data\img_reg\" # Path to regularization folder (path can lead to an empty folder, but folder must exist)
 $output_dir = "X:\LoRA\" # LoRA network saving path
 $output_name = "my_LoRA_network_v1" # LoRA network file name (no extension)
 
 $train_batch_size = 1 # How much images to train simultaneously. Higher number = less training steps (faster), higher VRAM usage
-$resolution = 512 # Training resolution
+$resolution = 512 # Training resolution (px)
 $num_epochs = 10 # Number of epochs
 $save_every_n_epochs = 1 # Save every n epochs
 $save_last_n_epochs = 999 # Save only last n epochs
@@ -27,15 +27,16 @@ $clip_skip = 1 # https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Fe
 $learning_rate = 1e-4 # Learning rate
 $unet_lr = $learning_rate # U-Net learning rate
 $text_encoder_lr = $learning_rate # Text encoder learning rate
-$scheduler = "cosine_with_restarts" # linear, cosine, cosine_with_restarts, polynomial, constant (default), constant_with_warmup
-$network_dim = 128 # Size of network. Higher number = higher accuracy, higher output file size
-$save_precision = "fp16" # None, float, fp16, bf16
-$mixed_precision = "fp16" # no, fp16, bf16
-$is_random_seed = 1 # 1 = random seed, 0 = static seed
+$scheduler = "cosine_with_restarts" # Scheduler to use for learning rate. Possible values: linear, cosine, cosine_with_restarts, polynomial, constant (default), constant_with_warmup
+$lr_warmup_ratio = 0.0 # Ratio of warmup steps in the learning rate scheduler to total training steps (0 to 1)
+$network_dim = 128 # Size of network. Higher number = higher accuracy, output file size and VRAM usage
+$save_precision = "fp16" # Whether to use custom precision for saving, and its type. Possible values: no, float, fp16, bf16
+$mixed_precision = "fp16" # Whether to use mixed precision for training, and its type. Possible values: no, fp16, bf16
+$is_random_seed = 1 # Seed for training. 1 = random seed, 0 = static seed
 $shuffle_caption = 1 # Shuffle comma-separated captions
-$keep_tokens = 1 # Keep heading N tokens when shuffling caption tokens
-$use_vae = 0 
-$vae_path = "X:\SD-models\checkpoint.vae.pt"
+$keep_tokens = 0 # Keep heading N tokens when shuffling caption tokens
+$use_vae = 0 # Use VAE for loaded checkpoint
+$vae_path = "X:\SD-models\checkpoint.vae.pt" # Path to VAE
 
 # Logging
 
@@ -136,12 +137,16 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 	if ($is_random_seed -le 0) { $seed = 1337 }
 	else { $seed = Get-Random }
 	
+	if ($lr_warmup_ratio -lt 0.0) { $lr_warmup_ratio = 0.0 }
+	if ($lr_warmup_ratio -gt 1.0) { $lr_warmup_ratio = 1.0 }
+	$lr_warmup_steps = [math]::Round($max_training_steps * $lr_warmup_ratio)
+	
 	$image_dir = $image_dir.TrimEnd("\", "/")
 	$reg_dir = $reg_dir.TrimEnd("\", "/")
 	$output_dir = $output_dir.TrimEnd("\", "/")
 	$logging_dir = $logging_dir.TrimEnd("\", "/")
 	
-	$run_parameters = "--network_module=networks.lora --pretrained_model_name_or_path=`"$ckpt`" --train_data_dir=`"$image_dir`" --reg_data_dir=`"$reg_dir`" --output_dir=`"$output_dir`" --output_name=`"$output_name`" --caption_extension=`".txt`" --resolution=$resolution --prior_loss_weight=1 --enable_bucket --min_bucket_reso=256 --max_bucket_reso=1024 --train_batch_size=$train_batch_size --learning_rate=$learning_rate --unet_lr=$unet_lr --text_encoder_lr=$text_encoder_lr --max_train_steps=$max_training_steps --use_8bit_adam --xformers --save_every_n_epochs=$save_every_n_epochs --save_last_n_epochs=$save_last_n_epochs --save_model_as=safetensors --keep_tokens=$keep_tokens --clip_skip=$clip_skip --seed=$seed --network_dim=$network_dim --cache_latents --lr_scheduler=$scheduler --mixed_precision=$mixed_precision --save_precision=$save_precision"
+	$run_parameters = "--network_module=networks.lora --pretrained_model_name_or_path=`"$ckpt`" --train_data_dir=`"$image_dir`" --reg_data_dir=`"$reg_dir`" --output_dir=`"$output_dir`" --output_name=`"$output_name`" --caption_extension=`".txt`" --resolution=$resolution --prior_loss_weight=1 --enable_bucket --min_bucket_reso=256 --max_bucket_reso=1024 --train_batch_size=$train_batch_size --lr_warmup_steps=$lr_warmup_steps --learning_rate=$learning_rate --unet_lr=$unet_lr --text_encoder_lr=$text_encoder_lr --max_train_steps=$max_training_steps --use_8bit_adam --xformers --save_every_n_epochs=$save_every_n_epochs --save_last_n_epochs=$save_last_n_epochs --save_model_as=safetensors --keep_tokens=$keep_tokens --clip_skip=$clip_skip --seed=$seed --network_dim=$network_dim --cache_latents --lr_scheduler=$scheduler"
 	
 	if ($max_token_length -eq 75) { }
 	else
@@ -170,10 +175,10 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 	}
 	
 	if ($shuffle_caption -ge 1) { $run_parameters += " --shuffle_caption" }
-	
 	if ($logging_enabled -ge 1) { $run_parameters += " --logging_dir=`"$logging_dir`" --log_prefix=`"$output_name`""}
-	
 	if ($use_vae -ge 1) { $run_parameters += " --vae=`"$vae_path`"" }
+	if ($mixed_precision -eq "fp16" -or $mixed_precision -eq "bf16") { $run_parameters += " --mixed_precision=$mixed_precision" }
+	if ($save_precision -eq "float" -or $save_precision -eq "fp16" -or $save_precision -eq "bf16") { $run_parameters += " --save_precision=$save_precision" }
 	
 	sleep -s 1
 	
@@ -191,4 +196,4 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 	}
 }
 
-# 13.01.23 by anon
+# 14.01.23 by anon

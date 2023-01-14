@@ -14,8 +14,8 @@ $reg_dir = "X:\training_data\img_reg\" # Путь к папке с регуля�
 $output_dir = "X:\LoRA\" # Директория сохранения LoRA чекпоинтов
 $output_name = "my_LoRA_network_v1" # Название файла (расширение не нужно)
 
-$train_batch_size = 1 # Сколько изображений тренировать одновременно. Чем больше значение, тем быстрее тренировка, но больше потребление видеопамяти
-$resolution = 512 # Разрешение тренировки
+$train_batch_size = 1 # Количество изображений, на которых идёт обучение, одновременно. Чем больше значение, тем меньше шагов обучения (обучение проходит быстрее), но больше потребление видеопамяти
+$resolution = 512 # Разрешение обучения (пиксели)
 $num_epochs = 10 # Число эпох
 $save_every_n_epochs = 1 # Сохранять чекпоинт каждые n эпох
 $save_last_n_epochs = 999 # Сохранить только последние n эпох
@@ -27,14 +27,15 @@ $clip_skip = 1 # https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Fe
 $learning_rate = 1e-4 # Скорость обучения
 $unet_lr = $learning_rate # Скорость обучения U-Net
 $text_encoder_lr = $learning_rate # Скорость обучения текстового энкодера
-$scheduler = "cosine_with_restarts" # linear, cosine, cosine_with_restarts, polynomial, constant (по умолчанию), constant_with_warmup
+$scheduler = "cosine_with_restarts" # Планировщик скорости обучения. Возможные значения: linear, cosine, cosine_with_restarts, polynomial, constant (по умолчанию), constant_with_warmup
+$lr_warmup_ratio = 0.0 # Отношение количества шагов разогрева планировщика к количеству шагов обучения (от 0 до 1)
 $network_dim = 128 # Размер нетворка. Чем больше значение, тем больше точность и размер выходного файла
-$save_precision = "fp16" # None, float, fp16, bf16
-$mixed_precision = "fp16" # no, fp16, bf16
-$is_random_seed = 1 # 1 -- рандомный сид, 0 -- статичный
-$shuffle_caption = 1 # Перемешивать файлы описания, затеганные через запятую
-$keep_tokens = 1 # Не перемешивать первые N токенов когда перемешивается описание
-$use_vae = 0 # Использовать VAE
+$save_precision = "fp16" # Использовать ли пользовательскую точность сохранения, и её тип. Возможные значения: no, float, fp16, bf16
+$mixed_precision = "fp16" # Использовать ли смешанную точность для обучения, и её тип. Возможные значения: no, fp16, bf16
+$is_random_seed = 1 # Сид обучения. 1 = рандомный сид, 0 = статичный
+$shuffle_caption = 1 # Перетасовывать ли теги в файлах описания, разделённых запятой
+$keep_tokens = 0 # Не перетасовывать первые N токенов при перемешивании описаний
+$use_vae = 0 # Использовать ли VAE для загружаемого чекпоинта
 $vae_path = "X:\SD-models\checkpoint.vae.pt" # Путь к VAE
 
 # Логгирование
@@ -146,12 +147,16 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 	if ($is_random_seed -le 0) { $seed = 1337 }
 	else { $seed = Get-Random }
 	
+	if ($lr_warmup_ratio -lt 0.0) { $lr_warmup_ratio = 0.0 }
+	if ($lr_warmup_ratio -gt 1.0) { $lr_warmup_ratio = 1.0 }
+	$lr_warmup_steps = [math]::Round($max_training_steps * $lr_warmup_ratio)
+	
 	$image_dir = $image_dir.TrimEnd("\", "/")
 	$reg_dir = $reg_dir.TrimEnd("\", "/")
 	$output_dir = $output_dir.TrimEnd("\", "/")
 	$logging_dir = $logging_dir.TrimEnd("\", "/")
 	
-	$run_parameters = "--network_module=networks.lora --pretrained_model_name_or_path=`"$ckpt`" --train_data_dir=`"$image_dir`" --reg_data_dir=`"$reg_dir`" --output_dir=`"$output_dir`" --output_name=`"$output_name`" --caption_extension=`".txt`" --resolution=$resolution --prior_loss_weight=1 --enable_bucket --min_bucket_reso=256 --max_bucket_reso=1024 --train_batch_size=$train_batch_size --learning_rate=$learning_rate --unet_lr=$unet_lr --text_encoder_lr=$text_encoder_lr --max_train_steps=$max_training_steps --use_8bit_adam --xformers --save_every_n_epochs=$save_every_n_epochs --save_last_n_epochs=$save_last_n_epochs --save_model_as=safetensors --keep_tokens=$keep_tokens --clip_skip=$clip_skip --seed=$seed --network_dim=$network_dim --cache_latents --lr_scheduler=$scheduler --mixed_precision=$mixed_precision --save_precision=$save_precision"
+	$run_parameters = "--network_module=networks.lora --pretrained_model_name_or_path=`"$ckpt`" --train_data_dir=`"$image_dir`" --reg_data_dir=`"$reg_dir`" --output_dir=`"$output_dir`" --output_name=`"$output_name`" --caption_extension=`".txt`" --resolution=$resolution --prior_loss_weight=1 --enable_bucket --min_bucket_reso=256 --max_bucket_reso=1024 --train_batch_size=$train_batch_size --lr_warmup_steps=$lr_warmup_steps --learning_rate=$learning_rate --unet_lr=$unet_lr --text_encoder_lr=$text_encoder_lr --max_train_steps=$max_training_steps --use_8bit_adam --xformers --save_every_n_epochs=$save_every_n_epochs --save_last_n_epochs=$save_last_n_epochs --save_model_as=safetensors --keep_tokens=$keep_tokens --clip_skip=$clip_skip --seed=$seed --network_dim=$network_dim --cache_latents --lr_scheduler=$scheduler"
 	
 	if ($max_token_length -eq 75) { }
 	else
@@ -173,17 +178,17 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 		$run_parameters += " --v2"
 		if ($clip_skip -eq -not 1)
 		{
-			Write-ColorOutput darkyellow "Внимание: результаты тренировки SD 2.x чекпоинта с clip_skip отличным от 1 могут быть непредсказуемые"
+			Write-ColorOutput darkyellow "Внимание: результаты обучения SD 2.x чекпоинта с clip_skip отличным от 1 могут быть непредсказуемые"
 			do { $abort_script = Read-Host "Прервать выполнение скрипта? (y/N)" }
 			until (($abort_script -eq "y") -or ($abort_script -ceq "N"))
 		}
 	}
 	
 	if ($shuffle_caption -ge 1) { $run_parameters += " --shuffle_caption" }
-	
 	if ($logging_enabled -ge 1) { $run_parameters += " --logging_dir=`"$logging_dir`" --log_prefix=`"$output_name`""}
-	
 	if ($use_vae -ge 1) { $run_parameters += " --vae=`"$vae_path`"" }
+	if ($mixed_precision -eq "fp16" -or $mixed_precision -eq "bf16") { $run_parameters += " --mixed_precision=$mixed_precision" }
+	if ($save_precision -eq "float" -or $save_precision -eq "fp16" -or $save_precision -eq "bf16") { $run_parameters += " --save_precision=$save_precision" }
 	
 	sleep -s 1
 	
@@ -201,4 +206,4 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 	}
 }
 
-# 13.01.23 by anon
+# 14.01.23 by anon

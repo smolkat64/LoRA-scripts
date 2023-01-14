@@ -1,6 +1,6 @@
 # LoRA guide
 -> by anons <-
--> last update: 13.01.2023 <-
+-> last update: 14.01.2023 <-
 -> [**Русская версия**](https://rentry.org/2chAI_LoRA_Dreambooth_guide)<-
 ***
 ## Table of contents
@@ -101,7 +101,7 @@ The presence of underscores in the tags does not matter, but since they consume 
 
 #### Method 1 – script
 1. Clone the [sd-scripts repository by kohya-ss](https://github.com/kohya-ss/sd-scripts) or download it and unpack somewhere
-2. Download [script (retard-friendly)](https://pastebin.com/8XKAMFvY) (last update: 13.01.2023 20:23 UTC)
+2. Download [script (retard-friendly)](https://pastebin.com/8XKAMFvY) (last update: 14.01.2023 00:27 UTC)
 !!! info PowerShell
 	This script is for PowerShell, but that does not mean that it is only available to users of the latest versions of Windows. Not everyone knows this, but [PowerShell is available for all versions of Windows starting with XP, on Linux, and on macOS](https://github.com/PowerShell/PowerShell/releases).
 3. Open PowerShell and execute the following commands one by one::

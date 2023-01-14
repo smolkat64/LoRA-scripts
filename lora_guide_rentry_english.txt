@@ -243,7 +243,7 @@ First, make sure that the checkpoint file we are going to study, <name>.ckpt is 
 - Sanity Sample Seed 420420 for luck.
 
 **Miscellaneous**
-- Pretrained VAE Name or Path оставляем пустым.
+- Pretrained VAE Name or Path – leave blank.
 - [ ] Use Concepts List
 !!! warning The "Use Concepts List" checkbox has priority over the settings in the "Concepts" tab.
     "Use Concepts List" should be **unchecked** for 3 or fewer concepts and customize them through the interface, as described below. If using JSON for 3+ concepts, put the full path to the file into the "Concepts List" and check the box.

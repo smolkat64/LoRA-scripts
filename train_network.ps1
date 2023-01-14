@@ -4,8 +4,8 @@
 
 ##### Начало конфига #####
 
+# Директории
 $sd_scripts_dir = "X:\git-repos\sd-scripts\" # Путь к папке с репозиторием kohya-ss/sd-scripts
-
 $ckpt = "X:\SD-models\checkpoint.safetensors" # Путь к чекпоинту (ckpt / safetensors)
 $is_sd_v2_ckpt = 0 # Поставь '1' если загружаешь SD 2.x чекпоинт
 $is_sd_v2_768_ckpt = 0 # Также поставь здесь значение '1', если загружаешь SD 2.x-768 чекпоинт
@@ -13,17 +13,23 @@ $image_dir = "X:\training_data\img\" # Путь к папке с изображ�
 $reg_dir = "X:\training_data\img_reg\" # Путь к папке с регуляризационными изображениями (можно указать на пустую папку, но путь обязательно должен быть указан)
 $output_dir = "X:\LoRA\" # Директория сохранения LoRA чекпоинтов
 $output_name = "my_LoRA_network_v1" # Название файла (расширение не нужно)
+$use_vae = 0 # Использовать ли VAE для загружаемого чекпоинта
+$vae_path = "X:\SD-models\checkpoint.vae.pt" # Путь к VAE
 
+# Время тренировки (опционально)
+$desired_training_time = 0 # Если значение выше 0, игнорировать количество изображений с повторениями при вычислении количества шагов и обучать сеть в течении N минут.
+$my_training_speed = "1.23it/s | 1.23s/it" # Средняя скорость тренировки, учитывая мощность GPU. Значение вида XX.XXit/s или XX.XXs/it
+
+# Основные переменные
 $train_batch_size = 1 # Количество изображений, на которых идёт обучение, одновременно. Чем больше значение, тем меньше шагов обучения (обучение проходит быстрее), но больше потребление видеопамяти
 $resolution = 512 # Разрешение обучения (пиксели)
-$num_epochs = 10 # Число эпох
-$save_every_n_epochs = 1 # Сохранять чекпоинт каждые n эпох
-$save_last_n_epochs = 999 # Сохранить только последние n эпох
+$num_epochs = 10 # Число эпох. Не имеет силы при $desired_training_time > 0
+$save_every_n_epochs = 1 # Сохранять чекпоинт каждые N эпох
+$save_last_n_epochs = 999 # Сохранить только последние N эпох
 $max_token_length = 75 # Максимальная длина токена. Возможные значения: 75 / 150 / 225
 $clip_skip = 1 # https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features#ignore-last-layers-of-clip-model
 
-# Дополнительные настройки, можно оставить по умолчанию
-
+# Дополнительные переменные
 $learning_rate = 1e-4 # Скорость обучения
 $unet_lr = $learning_rate # Скорость обучения U-Net
 $text_encoder_lr = $learning_rate # Скорость обучения текстового энкодера
@@ -35,14 +41,12 @@ $mixed_precision = "fp16" # Использовать ли смешанную т�
 $is_random_seed = 1 # Сид обучения. 1 = рандомный сид, 0 = статичный
 $shuffle_caption = 1 # Перетасовывать ли теги в файлах описания, разделённых запятой
 $keep_tokens = 0 # Не перетасовывать первые N токенов при перемешивании описаний
-$use_vae = 0 # Использовать ли VAE для загружаемого чекпоинта
-$vae_path = "X:\SD-models\checkpoint.vae.pt" # Путь к VAE
 
-# Логгирование
-
+# Логгирование и дебаг
 $logging_enabled = 0
 $logging_dir = "X:\LoRA\logs\"
 $log_prefix = $output_name
+$debug_dataset = 0
 
 ##### Конец конфига #####
 
@@ -132,31 +136,68 @@ if ($is_structure_wrong -eq 0) { Get-ChildItem -Path $reg_dir -Directory | % { i
 
 if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 0))
 {
-	if ($reg_imgs -gt 0)
-	{
-		$total *= 2
-		Write-Output "Количество шагов увеличено вдвое: количество регуляризационных изображений больше 0"
-	}
 	
-	Write-Output "Количество изображений с повторениями: $total"
+	Write-Output "Количество обучающих изображений с повторениями: $total"
 	Write-Output "Размер обучающей партии (train_batch_size): $train_batch_size"
 	Write-Output "Количество эпох: $num_epochs"
-	$max_training_steps = [int]($total / $train_batch_size * $num_epochs)
-	Write-Output "Количество шагов: $total / $train_batch_size * $num_epochs = $max_training_steps"
+	
+	if ($desired_training_time -gt 0) 
+	{
+		if ($my_training_speed -match '\d+[.]\d+it[\/\\]s' -or $my_training_speed -match '\d+[.]\d+s[\/\\]it')
+		{
+			Write-Output "Используем desired_training_time для вычисления шагов обучения, учитывая скорость GPU"
+			$speed_value = $my_training_speed -replace '[^.0-9]'
+			if ([regex]::split($my_training_speed, '[\/\\]') -replace '\d+.\d+' -eq 's') { $speed_value = 1 / $speed_value }
+			$max_train_steps = [float]$speed_value * 60 * $desired_training_time
+			if ($reg_imgs -gt 0)
+			{
+				$max_train_steps *= 2
+				$max_train_steps = [math]::Round($max_train_steps)
+				Write-Output "Количество регуляризационных изображений больше 0"
+				do { $reg_img_compensate_time = Read-Host "Вы хотите уменьшить количество шагов вдвое для компенсации увеличенного времени? (y/N)" }
+				until (($reg_img_compensate_time -eq "y") -or ($reg_img_compensate_time -ceq "N"))
+				if ($reg_img_compensate_time -eq "y")
+				{
+					[int]$max_train_steps = [math]::Round($max_train_steps / 2)
+					Write-Output "Количество шагов: $([math]::Round($($speed_value * 60), 2)) it/min * $desired_training_time минут(-а) ≈ $max_train_steps шаг(-ов)"
+				}
+				else
+				{
+					Write-Output "Вы выбрали нет. Увеличенное время компенсировано не будет, длительность тренировки увеличена вдвое"
+					Write-Output "Количество шагов: $([math]::Round($($speed_value * 60), 2)) it/min * $desired_training_time минут(-а) * 2 ≈ $max_train_steps шаг(-ов)"
+				}
+			}
+		}
+		else
+		{
+			Write-ColorOutput red "Неверно указана скорость обучения my_training_speed!"
+			$abort_script = 1
+		}
+	}
+	else
+	{
+		Write-Output "Используем количество изображений для вычисления шагов обучения"
+		if ($reg_imgs -gt 0)
+		{
+			$total *= 2
+			Write-Output "Количество регуляризационных изображений больше 0: количество шагов будет увеличено вдвое"
+		}
+		$max_train_steps = [int]($total / $train_batch_size * $num_epochs)
+	}
 	
 	if ($is_random_seed -le 0) { $seed = 1337 }
 	else { $seed = Get-Random }
 	
 	if ($lr_warmup_ratio -lt 0.0) { $lr_warmup_ratio = 0.0 }
 	if ($lr_warmup_ratio -gt 1.0) { $lr_warmup_ratio = 1.0 }
-	$lr_warmup_steps = [math]::Round($max_training_steps * $lr_warmup_ratio)
+	$lr_warmup_steps = [math]::Round($max_train_steps * $lr_warmup_ratio)
 	
 	$image_dir = $image_dir.TrimEnd("\", "/")
 	$reg_dir = $reg_dir.TrimEnd("\", "/")
 	$output_dir = $output_dir.TrimEnd("\", "/")
 	$logging_dir = $logging_dir.TrimEnd("\", "/")
 	
-	$run_parameters = "--network_module=networks.lora --pretrained_model_name_or_path=`"$ckpt`" --train_data_dir=`"$image_dir`" --reg_data_dir=`"$reg_dir`" --output_dir=`"$output_dir`" --output_name=`"$output_name`" --caption_extension=`".txt`" --resolution=$resolution --prior_loss_weight=1 --enable_bucket --min_bucket_reso=256 --max_bucket_reso=1024 --train_batch_size=$train_batch_size --lr_warmup_steps=$lr_warmup_steps --learning_rate=$learning_rate --unet_lr=$unet_lr --text_encoder_lr=$text_encoder_lr --max_train_steps=$max_training_steps --use_8bit_adam --xformers --save_every_n_epochs=$save_every_n_epochs --save_last_n_epochs=$save_last_n_epochs --save_model_as=safetensors --keep_tokens=$keep_tokens --clip_skip=$clip_skip --seed=$seed --network_dim=$network_dim --cache_latents --lr_scheduler=$scheduler"
+	$run_parameters = "--network_module=networks.lora --pretrained_model_name_or_path=`"$ckpt`" --train_data_dir=`"$image_dir`" --reg_data_dir=`"$reg_dir`" --output_dir=`"$output_dir`" --output_name=`"$output_name`" --caption_extension=`".txt`" --resolution=$resolution --prior_loss_weight=1 --enable_bucket --min_bucket_reso=256 --max_bucket_reso=1024 --train_batch_size=$train_batch_size --lr_warmup_steps=$lr_warmup_steps --learning_rate=$learning_rate --unet_lr=$unet_lr --text_encoder_lr=$text_encoder_lr --max_train_steps=$max_train_steps --use_8bit_adam --xformers --save_every_n_epochs=$save_every_n_epochs --save_last_n_epochs=$save_last_n_epochs --save_model_as=safetensors --keep_tokens=$keep_tokens --clip_skip=$clip_skip --seed=$seed --network_dim=$network_dim --cache_latents --lr_scheduler=$scheduler"
 	
 	if ($max_token_length -eq 75) { }
 	else
@@ -165,35 +206,40 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 		else { Write-ColorOutput darkyellow "Неверно указан max_token_length! Используем значение 75" }
 	}
 	
-	if ($is_sd_v2_ckpt -le 0) { Write-Output "Stable Diffusion 1.x чекпоинт" }
-	if ($is_sd_v2_ckpt -ge 1)
-	{
-		if ($is_sd_v2_768_ckpt -ge 1)
-		{
-			$v2_resolution = "768"
-			$run_parameters += " --v_parameterization"
-		}
-		else { $v2_resolution = "512" }
-		Write-Output "Stable Diffusion 2.x ($v2_resolution) чекпоинт"
-		$run_parameters += " --v2"
-		if ($clip_skip -eq -not 1)
-		{
-			Write-ColorOutput darkyellow "Внимание: результаты обучения SD 2.x чекпоинта с clip_skip отличным от 1 могут быть непредсказуемые"
-			do { $abort_script = Read-Host "Прервать выполнение скрипта? (y/N)" }
-			until (($abort_script -eq "y") -or ($abort_script -ceq "N"))
-		}
-	}
-	
 	if ($shuffle_caption -ge 1) { $run_parameters += " --shuffle_caption" }
 	if ($logging_enabled -ge 1) { $run_parameters += " --logging_dir=`"$logging_dir`" --log_prefix=`"$output_name`""}
 	if ($use_vae -ge 1) { $run_parameters += " --vae=`"$vae_path`"" }
 	if ($mixed_precision -eq "fp16" -or $mixed_precision -eq "bf16") { $run_parameters += " --mixed_precision=$mixed_precision" }
 	if ($save_precision -eq "float" -or $save_precision -eq "fp16" -or $save_precision -eq "bf16") { $run_parameters += " --save_precision=$save_precision" }
+	if ($debug_dataset -ge 1) { $run_parameters += " --debug_dataset"}
 	
 	sleep -s 1
 	
 	if ($abort_script -eq "n" -or $abort_script -eq 0)
 	{
+		if ($is_sd_v2_ckpt -le 0) { Write-Output "Stable Diffusion 1.x чекпоинт" }
+		if ($is_sd_v2_ckpt -ge 1)
+		{
+			if ($is_sd_v2_768_ckpt -ge 1)
+			{
+				$v2_resolution = "768"
+				$run_parameters += " --v_parameterization"
+			}
+			else { $v2_resolution = "512" }
+			Write-Output "Stable Diffusion 2.x ($v2_resolution) чекпоинт"
+			$run_parameters += " --v2"
+			if ($clip_skip -eq -not 1)
+			{
+			Write-ColorOutput darkyellow "Внимание: результаты обучения SD 2.x чекпоинта с clip_skip отличным от 1 могут быть непредсказуемые"
+			do { $abort_script = Read-Host "Прервать выполнение скрипта? (y/N)" }
+			until (($abort_script -eq "y") -or ($abort_script -ceq "N"))
+			}
+		}
+	}
+	
+	if ($abort_script -eq "n" -or $abort_script -eq 0)
+	{
+		sleep -s 1
 		Write-ColorOutput green "Выполнение скрипта с параметрами:"
 		sleep -s 1
 		Write-Output "$($run_parameters -split '--' | foreach { if ($_ -ceq '') { Write-Output '' } else { Write-Output --`"$_`n`" } } | foreach { $_ -replace '=', ' = ' })"

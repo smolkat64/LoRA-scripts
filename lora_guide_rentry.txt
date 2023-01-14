@@ -169,15 +169,15 @@ $network_dim = 128
 **$learning_rate**: значение 1e-4 рекомендовано для чекпоинтов, основанных на SD 1.x. Для 2.x – непонятно, кто-то говорит что [получил ужасные результаты с такими настройками](https://github.com/d8ahazard/sd_dreambooth_extension/issues/486#issuecomment-1345884109). Но у меня получались достойные лица и на рекомендованных настройках.
 В чем отличие высокой и низкой скорости? Существует даже отдельный [сайт](https://losslandscape.com/explorer), в котором это наглядно показано: на слишком низкой скорости обучение застревает и сеть ничему не обучается, на слишком большой происходят непредсказуемые, но вряд ли хорошие вещи.
 Далее идут таблицы со сравнением различных *learning_rate*. Все сети были натренированы на одном и том же [датасете](https://drive.google.com/drive/folders/1JjIV61fMUyJKYOxZpYokx7cd81awtBWc) ([pixiv автора рисунков](https://www.pixiv.net/en/users/32808113)), все изображения были сгенерированы на одном сиде с разными промтами. Обратите внимание на то, как сети при различных настройках обучились следующим тегам: *harusameriburo* (стиль художника), *jacket*, *cloudy sky*, *shoes*, *ligne claire*, *backpack*, *blush stickers*.
-![](https://files.catbox.moe/ey8rmt.png)
+![](https://files.catbox.moe/dh3c0w.png)
 -> learning_rate = **X**, unet_lr = learning_rate, text_encoder_lr = learning_rate, scheduler = linear <-
 
 **$unet_lr**: скорость обучения U-Net. [Поле для экспериментов](https://github.com/cloneofsimo/lora/discussions/69).
-![](https://files.catbox.moe/psc3mp.png)
+![](https://files.catbox.moe/wmue60.png)
 -> learning_rate = 1e-4, unet_lr = **X**, text_encoder_lr = learning_rate, scheduler = linear <-
 
 **$text_encoder_lr**: некоторые советуют уменьшать скорость обучения текстового энкодера в два раза относительно learning_rate (т.е. до значения 5e-5), мол, так результаты лучше. Поле для экспериментов.
-![](https://files.catbox.moe/ryurex.png)
+![](https://files.catbox.moe/py6lq3.png)
 -> learning_rate = 1e-4, unet_lr = learning_rate, text_encoder_lr = **X**, scheduler = linear <-
 
 **$scheduler**: поле для экспериментов.

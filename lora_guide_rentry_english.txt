@@ -169,15 +169,15 @@ $network_dim = 128
 **$learning_rate**: 1e-4 is recommended for checkpoints based on SD 1.x. For 2.x - it is unclear, someone says that [got terrible results with these settings](https://github.com/d8ahazard/sd_dreambooth_extension/issues/486#issuecomment-1345884109). But I got decent faces at the recommended settings as well.
 What is the difference between high and low speed? There is even a separate [website](https://losslandscape.com/explorer) which clearly shows this: at too low speed the learning gets stuck and the network learns nothing, at too high speed unpredictable but unlikely good things happen.
 The following are grids comparing different *learning_rate*. All networks were trained on the same [dataset](https://drive.google.com/drive/folders/1JjIV61fMUyJKYOxZpYokx7cd81awtBWc) ([pixiv of the author](https://www.pixiv.net/en/users/32808113)), all images were generated on the same seed with different prompt. Note how the networks at different settings learned the following tags: *harusameriburo* (artist style), *jacket*, *cloudy sky*, *shoes*, *ligne claire*, *backpack*, *blush stickers*.
-![](https://files.catbox.moe/ey8rmt.png)
+![](https://files.catbox.moe/dh3c0w.png)
 -> learning_rate = **X**, unet_lr = learning_rate, text_encoder_lr = learning_rate, scheduler = linear <-
 
 **$unet_lr**: U-Net learning rate. [Field for experimentation](https://github.com/cloneofsimo/lora/discussions/69).
-![](https://files.catbox.moe/psc3mp.png)
+![](https://files.catbox.moe/wmue60.png)
 -> learning_rate = 1e-4, unet_lr = **X**, text_encoder_lr = learning_rate, scheduler = linear <-
 
 **$text_encoder_lr**: Some people advise to halve the learning rate of the text encoder relative to the learning_rate (i.e. to a value of 5e-5), saying that this gives better results. Field for experimentation.
-![](https://files.catbox.moe/ryurex.png)
+![](https://files.catbox.moe/py6lq3.png)
 -> learning_rate = 1e-4, unet_lr = learning_rate, text_encoder_lr = **X**, scheduler = linear <-
 
 **$scheduler**: field for experimentation.

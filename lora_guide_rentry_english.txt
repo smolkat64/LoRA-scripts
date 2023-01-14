@@ -58,7 +58,7 @@ First, make sure that the checkpoint file *<model_name>.ckpt* is in the *stable-
 !!! info Advice №4
     To speed up manual tagging you can use [sd-tagging-helper](https://github.com/arenatemp/sd-tagging-helper/).
 	There is also [separate software](https://github.com/starik222/BooruDatasetTagManager) and extensions ([1](https://github.com/toshiaki1729/stable-diffusion-webui-dataset-tag-editor), [2](https://github.com/toriato/stable-diffusion-webui-wd14-tagger), [3](https://github.com/SesuMoe/sd-tagger-webui)) for A1111-webui.
-	You can use [Grabber](https://github.com/Bionus/imgbrd-grabber/releases) with [these settings](https://i.imgur.com/XHvfAkj.png) to download images from various booru boards along with tags.
+	You can use [Grabber](https://github.com/Bionus/imgbrd-grabber/releases) with [these settings](https://i.imgur.com/VH5HOcQ.png) to download images from various booru boards along with tags.
 	
 ***
 #### Method 1 – preparing a dataset for the script

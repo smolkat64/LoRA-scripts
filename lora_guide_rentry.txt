@@ -58,7 +58,7 @@
 !!! info Совет №4
     Для ускорения ручного тегирования можно использовать [мокропиську](https://github.com/arenatemp/sd-tagging-helper/).
 	Еще есть [отдельная софтина](https://github.com/starik222/BooruDatasetTagManager) и расширения ([1](https://github.com/toshiaki1729/stable-diffusion-webui-dataset-tag-editor), [2](https://github.com/toriato/stable-diffusion-webui-wd14-tagger), [3](https://github.com/SesuMoe/sd-tagger-webui)) для A1111-webui.
-	Для скачивания изображений с различных booru-досок вместе с тегами можно использовать [Grabber](https://github.com/Bionus/imgbrd-grabber/releases) с [такими настройками](https://i.imgur.com/XHvfAkj.png).
+	Для скачивания изображений с различных booru-досок вместе с тегами можно использовать [Grabber](https://github.com/Bionus/imgbrd-grabber/releases) с [такими настройками](https://i.imgur.com/VH5HOcQ.png).
 	
 ***
 #### Способ 1 – создание датасета для скрипта

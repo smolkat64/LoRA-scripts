@@ -101,7 +101,7 @@
 
 #### Способ 1 – скрипт
 1. Клонировать репозиторий [sd-scripts от kohya-ss](https://github.com/kohya-ss/sd-scripts) или скачать его
-2. Скачать [скрипт](https://pastebin.com/iwuvZfQq) (обновлено: 13.01.2023 14:43 по МСК)
+2. Скачать [скрипт](https://pastebin.com/iwuvZfQq) (обновлено: 13.01.2023 23:23 по МСК)
 !!! info PowerShell
 	Данный скрипт предназначен для PowerShell, но это не значит что он доступен только пользователям последних версий Windows. Не все знают, но [PowerShell доступен для всех версий Windows начиная с XP, на Linux, а также на macOS](https://github.com/PowerShell/PowerShell/releases).
 3. Открыть PowerShell и поочерёдно выполнить следующие команды:

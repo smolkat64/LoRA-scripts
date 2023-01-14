@@ -1,6 +1,6 @@
 # https://github.com/cloneofsimo/lora
 # https://github.com/kohya-ss/sd-scripts
-# https://rentry.org/2chAI_LoRA_Dreambooth_guide
+# https://rentry.org/2chAI_LoRA_Dreambooth_guide_english
 
 ##### Config start #####
 
@@ -27,7 +27,7 @@ $clip_skip = 1 # https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Fe
 $learning_rate = 1e-4 # Learning rate
 $unet_lr = $learning_rate # U-Net learning rate
 $text_encoder_lr = $learning_rate # Text encoder learning rate
-$scheduler = "cosine_with_restarts" # linear, cosine, cosine_with_restarts, polynomial, constant (по умолчанию), constant_with_warmup
+$scheduler = "cosine_with_restarts" # linear, cosine, cosine_with_restarts, polynomial, constant (default), constant_with_warmup
 $network_dim = 128 # Size of network. Higher number = higher accuracy, higher output file size
 $save_precision = "fp16" # None, float, fp16, bf16
 $mixed_precision = "fp16" # no, fp16, bf16

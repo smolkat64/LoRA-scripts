@@ -168,11 +168,21 @@ $network_dim = 128
 
 **$learning_rate**: 1e-4 is recommended for checkpoints based on SD 1.x. For 2.x - it is unclear, someone says that [got terrible results with these settings](https://github.com/d8ahazard/sd_dreambooth_extension/issues/486#issuecomment-1345884109). But I got decent faces at the recommended settings as well.
 What is the difference between high and low speed? There is even a separate [website](https://losslandscape.com/explorer) which clearly shows this: at too low speed the learning gets stuck and the network learns nothing, at too high speed unpredictable but unlikely good things happen.
+The following are grids comparing different *learning_rate*. All networks were trained on the same [dataset](https://drive.google.com/drive/folders/1JjIV61fMUyJKYOxZpYokx7cd81awtBWc) ([pixiv of the author](https://www.pixiv.net/en/users/32808113)), all images were generated on the same seed with different prompt. Note how the networks at different settings trained the following tags: *harusameriburo* (artist style), *jacket*, *cloudy sky*, *shoes*, *ligne claire*, *backpack*, *blush stickers*.
+![](https://files.catbox.moe/ey8rmt.png)
+-> learning_rate = **X**, unet_lr = learning_rate, text_encoder_lr = learning_rate, scheduler = linear <-
+
 **$unet_lr**: U-Net learning rate. [Field for experimentation](https://github.com/cloneofsimo/lora/discussions/69).
+![](https://files.catbox.moe/psc3mp.png)
+-> learning_rate = 1e-4, unet_lr = **X**, text_encoder_lr = learning_rate, scheduler = linear <-
+
 **$text_encoder_lr**: Some people advise to halve the learning rate of the text encoder relative to the learning_rate (i.e. to a value of 5e-5), saying that this gives better results. Field for experimentation.
+![](https://files.catbox.moe/ryurex.png)
+-> learning_rate = 1e-4, unet_lr = learning_rate, text_encoder_lr = **X**, scheduler = linear <-
+
 **$scheduler**: field for experimentation.
-![](https://files.catbox.moe/ffqtuq.png)
--> (The grid will be redone because I forgot to disable random seed and --shuffle_caption)<-
+![](https://files.catbox.moe/pp1zdz.png)
+-> learning_rate = 1e-4, unet_lr = learning_rate, text_encoder_lr = learning_rate, scheduler = **X** <-
 
 **$network_dim**: values can be different (I saw someone training at 1024), but it was found that values above 128/256 do not make a big difference. The higher the value, the higher the video memory consumption and output file size.
 **$save_precision, $mixed_precision**: As said before, bf16 > fp16, so if your hardware allows it, go for it.
@@ -273,3 +283,9 @@ A: Download [alternative cuda libraries](https://github.com/james-things/bitsand
 
 Q: The extension for loading LoRA networks does not work.
 A: Make sure that there is no *--lowvram* argument in *webui-user.bat*. It's not working yet.
+
+Q: I have Windows 7 and PowerShell crashes.
+A: Install [PowerShell 6](https://github.com/PowerShell/PowerShell/releases/tag/v6.2.6).
+
+Q: I get red console errors when I run a script!
+A: Update [PowerShell](https://github.com/PowerShell/PowerShell/releases).

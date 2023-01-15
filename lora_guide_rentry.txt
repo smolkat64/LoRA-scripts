@@ -207,7 +207,7 @@ $network_dim = 128
 1. Открыть новую вкладку | 2. Нажать кнопку "Performance Wizard (WIP)"
 :----: | :----:
 ![](https://i.imgur.com/LZzQvw1.png) | ![](https://c2n.me/4hArOym.jpg)
-**3. Придумать название, выбрать исходную модель "Source Checkpoint" и нажать Create Model** |
+**3. Придумать название, выбрать исходную модель "Source Checkpoint" и нажать Create** |
 ![](https://c2n.me/4hArRs9.jpg)
 
 ->  **4. Проверить настройки во вкладке "Parameters" (сверху вниз):** <-

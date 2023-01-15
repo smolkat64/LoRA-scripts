@@ -1,6 +1,6 @@
 # Гайд по LoRA
 -> by anons <-
--> последнее обновление: 14.01.2023 <-
+-> последнее обновление: 15.01.2023 <-
 -> [**English version**](https://rentry.org/2chAI_LoRA_Dreambooth_guide_english) <-
 ***
 ## Содержание
@@ -101,7 +101,7 @@
 
 #### Способ 1 – скрипт
 1. Клонировать репозиторий [sd-scripts от kohya-ss](https://github.com/kohya-ss/sd-scripts) или скачать его
-2. Скачать [скрипт (ПКМ \-> "Сохранить как...")](https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/train_network.ps1)
+2. Скачать [скрипт (ПКМ \-> "Сохранить как...")](https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/train_network.ps1) (обновлено: 14.01.2023 22:01 по МСК)
 !!! info PowerShell
 	Данный скрипт предназначен для PowerShell, но это не значит что он доступен только пользователям последних версий Windows. Не все знают, но [PowerShell доступен для всех версий Windows начиная с XP, на Linux, а также на macOS](https://github.com/PowerShell/PowerShell/releases).
 3. Открыть PowerShell и поочерёдно выполнить следующие команды:
@@ -193,42 +193,43 @@ $network_dim = 128
 
 ***
 #### Способ 2 – sd_dreambooth_extension
-!!! error ВОЗМОЖНО не работает на видеокартах с менее чем 10ГБ VRAM. Ожидайте дополнений.
+!!! warning Гайд основан на версии [c5cb58328c555ac27679422b1da940a9b19de6f2.](https://github.com/d8ahazard/sd_dreambooth_extension/tree/c5cb58328c555ac27679422b1da940a9b19de6f2)
+    Новые версии не влезают в 8ГБ VRAM и могут иметь другие проблемы.
 !!! error CKPT vs SAFETENSORS
     Файлы safetensors (пока) не поддерживаются! Из хороших новостей: обычно ckpt можно скачать там же, где качали safetensors.
+
+Установите дополнение sd_dreambooth_extension из вкладки Extensions, перезапустите webui и выключите его после.
+Скачайте версию c5cb58328c555ac27679422b1da940a9b19de6f2 [здесь](http://c2n.me/4hArEi5.zip) или на [GitHub.](https://github.com/d8ahazard/sd_dreambooth_extension/tree/c5cb58328c555ac27679422b1da940a9b19de6f2)
+Извлеките содержимое папки sd_dreambooth_extension-c5cb58328c555ac27679422b1da940a9b19de6f2 в stable-diffusion-webui\extensions\sd_dreambooth_extension\ **с заменой файлов.**
+
 Для начала удостоверьтесь, что исходный файл сети, на которой будем учиться, <name>.ckpt лежит по пути *stable-diffusion-webui\models\Stable-diffusion\\*, затем:
 
-1. Открыть новую вкладку | 2. Открыть вкладку Settings, нажать кнопку "Performance Wizard (WIP)" и проверить, что стоит чекбокс "Use LORA"
+1. Открыть новую вкладку | 2. Нажать кнопку "Performance Wizard (WIP)"
 :----: | :----:
-![](https://i.imgur.com/LZzQvw1.png) | ![](https://i.imgur.com/OVPcD71.png)
-**3. Перейти на вкладку Create, придумать название, выбрать исходную модель "Source Checkpoint" и нажать Create Model** |
-![](https://c2n.me/4hz7Bki.jpg)
+![](https://i.imgur.com/LZzQvw1.png) | ![](https://c2n.me/4hArOym.jpg)
+**3. Придумать название, выбрать исходную модель "Source Checkpoint" и нажать Create Model** |
+![](https://c2n.me/4hArRs9.jpg)
 
-->  **4. Проверить настройки (сверху вниз):** <-
-
-**General**
-- [x] Use LORA
-- [ ] Train Imagic Only
-- [x] Generate Classification Images Using txt2img
+->  **4. Проверить настройки во вкладке "Parameters" (сверху вниз):** <-
 
 **Intervals**
 - Training Steps Per Image (Epochs): от 25 до 150.
-`Больше – лучше, но дольше. Количество итераций НА КАЖДОЕ изображение.`
-- Pause After N Epochs 0
-- Amount of time to pause between Epochs (s) 0
-- Save Model Frequency (Epochs) 
-`Чем чаще сохраняется модель, тем больше выбор из младших версий, если более новые начали идти по пизде`
-- Save Preview(s) Frequency (Epochs) 
-`Чем чаще сохраняются превью, тем быстрее можно увидеть, что модель перетренирована и начала идти по пизде`
+!!! info Больше – лучше, но дольше. Количество итераций **НА КАЖДОЕ** изображение.
+    LoRA может быть **пере**тренирована так же, как и ембед с гипернетворкой. Слишком сильно накручивать продолжительность обучения не нужно.
+- Max Training Steps: 0
+- Pause After N Epochs: 0
+- Amount of time to pause between Epochs (s): 60
+- [x] Use Lifetime Steps/Epochs When Saving
+- [ ] Save Preview/Ckpt Every Epoch
+- Save Checkpoint Frequency: от 2000
+`Чем чаще сохраняется модель, тем больше выбор из младших версий, если более новые начали идти по пизде. Жрут место на диске!`
+- Save Preview(s) Frequency: от 500
+ `Чем чаще сохраняются превью, тем быстрее можно увидеть, что модель перетренирована и начала идти по пизде`
 !!! info Оба пункта "Save" замедляют обучение, потому что по-сути приостанавливают его для своих дел.
-    Устанавливаем равные значения от 5 до 25.
 
-**Batching**
+**Batch**
 - Batch Size 1
-- Gradient Accumulation Steps 1
 - Class Batch Size 1
-- [x] Set Gradients to None When Zeroing
-- [x] Gradient Checkpointing 
 
 **Learning Rate**
 !!! note Весь раздел "Learning Rate" оставляем без изменений.
@@ -239,17 +240,12 @@ $network_dim = 128
 `Изображения должны быть заранее и осмысленно обрезаны`
 - [x] Apply Horizontal Flip
 `Не рекомендуется для несимметричных персонажей`
-- Sanity Sample Prompt оставляем пустым.
-- Sanity Sample Seed оставляем 420420 на удачу.
 
 **Miscellaneous**
 - Pretrained VAE Name or Path оставляем пустым.
 - [ ] Use Concepts List
 !!! warning Галка "Use Concepts List" имеет приоритет перед настройками во вкладке "Concepts".
     "Use Concepts List" нужно **убрать** для 3 и меньше концептов и их настройки через интерфейс, как описано далее. Если используете JSON на 3+ концептов, вставляйте полный путь до файла в "Concepts List" и ставьте галку.
-
-- API Key оставляем пустым.
-- Discord Webhook оставляем пустым.
 
 -> **5. РАЗВОРАЧИВАЕМ внизу подменю Advanced и сверяем настройки:** <-
 !!! info BF16 > FP16
@@ -258,17 +254,11 @@ $network_dim = 128
     Откройте свой самый большой файл описания, скопируйте его содержимое и поместите в промт WebUI. Справа на счетчике отобразится длина токена. Если меньше 75, ставим 75. Если больше 75 – ставьте 150. Если больше 150 – ставьте 225. Максимальное значение – 300.
 !!! info Clip Skip    
     1 для SD-основанных чекпоинтов, 2 для NAI-основанных.
--> ![](http://c2n.me/4hzQ3DS.jpg) <-
+-> ![](https://c2n.me/4hAs2Z5.jpg) <-
 
 -> **6. Переходим во вкладку Concepts и настраиваем концепты:** <-
 
-[Пример настроенного концепта](http://c2n.me/4hzbMWW.jpg) (длинный скриншот), устанавливаем только путь до папки с изображениями и [filewords] в поля "Instance Token", "Class Token", "Instance Prompt", "Class Prompt" и "Sample Image Prompt". Все остальные настройки оставляем (но на всякий случай сверьте со скриншотом).
-
--> **7. Во вкладке "Saving" включаем сохранение LORA pt-файлов:** <-
-
-- [x] Generate lora weights when saving during training.
-- [x] Generate lora weights when training completes.
-- [x] Generate lora weights when training is canceled.
+[Пример настроенного концепта](http://c2n.me/4hAs5Ir.jpg) (длинный скриншот), устанавливаем только путь до папки с изображениями и [filewords] в поля "Instance Token", "Instance Prompt" и "Sample Image Prompt". Все остальные настройки оставляем (но на всякий случай сверьте со скриншотом).
 
 !!! note После этого нажимаем наверху "Save Settings" и запускаем обучение кнопкой "Train".
     Превью сохраняются в папку stable-diffusion-webui\models\dreambooth\НАЗВАНИЕМОДЕЛИ\samples\. Файлы pt ложатся в stable-diffusion-webui\models\lora\.

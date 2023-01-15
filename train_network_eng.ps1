@@ -47,6 +47,7 @@ $logging_enabled = 0
 $logging_dir = "X:\LoRA\logs\"
 $log_prefix = $output_name
 $debug_dataset = 0
+$test_run = 0 # Do not launch main script
 
 ##### Config end #####
 
@@ -127,8 +128,6 @@ if ($is_structure_wrong -eq 0) { Get-ChildItem -Path $reg_dir -Directory | % { i
 if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 0))
 {
 	Write-Output "Image number with repeats: $total"
-	Write-Output "Training batch size: $train_batch_size"
-	Write-Output "Number of epochs: $num_epochs"
 	
 	if ($desired_training_time -gt 0) 
 	{
@@ -166,12 +165,15 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 	else
 	{
 		Write-Output "Using number of training images to calculate total training steps"
+		Write-Output "Training batch size: $train_batch_size"
+		Write-Output "Number of epochs: $num_epochs"
 		if ($reg_imgs -gt 0)
 		{
 			$total *= 2
 			Write-Output "Total train steps doubled: number of regularization images is greater than 0"
 		}
 		$max_train_steps = [int]($total / $train_batch_size * $num_epochs)
+		Write-Output "Total training steps: $total / $train_batch_size * $num_epochs = $max_train_steps"
 	}
 	
 	if ($is_random_seed -le 0) { $seed = 1337 }
@@ -230,12 +232,15 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 		Write-ColorOutput green "Running script with parameters:"
 		sleep -s 1
 		Write-Output "$($run_parameters -split '--' | foreach { if ($_ -ceq '') { Write-Output '' } else { Write-Output --`"$_`n`" } } | foreach { $_ -replace '=', ' = ' })"
-		$script_origin = (get-location).path
-		cd $sd_scripts_dir
-		.\venv\Scripts\activate
-		powershell accelerate launch --num_cpu_threads_per_process 12 train_network.py $run_parameters
-		deactivate
-		cd $script_origin
+		if ($test_run -le 0)
+		{
+			$script_origin = (get-location).path
+			cd $sd_scripts_dir
+			.\venv\Scripts\activate
+			powershell accelerate launch --num_cpu_threads_per_process 12 train_network.py $run_parameters
+			deactivate
+			cd $script_origin
+		}
 	}
 }
 

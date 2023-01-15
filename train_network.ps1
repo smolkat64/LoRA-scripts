@@ -47,6 +47,7 @@ $logging_enabled = 0
 $logging_dir = "X:\LoRA\logs\"
 $log_prefix = $output_name
 $debug_dataset = 0
+$test_run = 0 # Не запускать основной скрипт
 
 ##### Конец конфига #####
 
@@ -138,8 +139,6 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 {
 	
 	Write-Output "Количество обучающих изображений с повторениями: $total"
-	Write-Output "Размер обучающей партии (train_batch_size): $train_batch_size"
-	Write-Output "Количество эпох: $num_epochs"
 	
 	if ($desired_training_time -gt 0) 
 	{
@@ -177,12 +176,15 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 	else
 	{
 		Write-Output "Используем количество изображений для вычисления шагов обучения"
+		Write-Output "Количество эпох: $num_epochs"
+		Write-Output "Размер обучающей партии (train_batch_size): $train_batch_size"
 		if ($reg_imgs -gt 0)
 		{
 			$total *= 2
 			Write-Output "Количество регуляризационных изображений больше 0: количество шагов будет увеличено вдвое"
 		}
 		$max_train_steps = [int]($total / $train_batch_size * $num_epochs)
+		Write-Output "Количество шагов: $total / $train_batch_size * $num_epochs = $max_train_steps"
 	}
 	
 	if ($is_random_seed -le 0) { $seed = 1337 }
@@ -241,12 +243,15 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 		Write-ColorOutput green "Выполнение скрипта с параметрами:"
 		sleep -s 1
 		Write-Output "$($run_parameters -split '--' | foreach { if ($_ -ceq '') { Write-Output '' } else { Write-Output --`"$_`n`" } } | foreach { $_ -replace '=', ' = ' })"
-		$script_origin = (get-location).path
-		cd $sd_scripts_dir
-		.\venv\Scripts\activate
-		powershell accelerate launch --num_cpu_threads_per_process 12 train_network.py $run_parameters
-		deactivate
-		cd $script_origin
+		if ($test_run -le 0)
+		{
+			$script_origin = (get-location).path
+			cd $sd_scripts_dir
+			.\venv\Scripts\activate
+			powershell accelerate launch --num_cpu_threads_per_process 12 train_network.py $run_parameters
+			deactivate
+			cd $script_origin
+		}
 	}
 }
 

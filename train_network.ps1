@@ -18,7 +18,7 @@ $vae_path = "X:\SD-models\checkpoint.vae.pt" # Путь к VAE
 
 # Время тренировки (опционально)
 $desired_training_time = 0 # Если значение выше 0, игнорировать количество изображений с повторениями при вычислении количества шагов и обучать сеть в течении N минут.
-$my_training_speed = "1.23it/s | 1.23s/it" # Средняя скорость тренировки, учитывая мощность GPU. Значение вида XX.XXit/s или XX.XXs/it
+$gpu_training_speed = "1.23it/s | 1.23s/it" # Средняя скорость тренировки, учитывая мощность GPU. Значение вида XX.XXit/s или XX.XXs/it
 
 # Основные переменные
 $train_batch_size = 1 # Количество изображений, на которых идёт обучение, одновременно. Чем больше значение, тем меньше шагов обучения (обучение проходит быстрее), но больше потребление видеопамяти
@@ -41,6 +41,7 @@ $mixed_precision = "fp16" # Использовать ли смешанную т�
 $is_random_seed = 1 # Сид обучения. 1 = рандомный сид, 0 = статичный
 $shuffle_caption = 1 # Перетасовывать ли теги в файлах описания, разделённых запятой
 $keep_tokens = 0 # Не перетасовывать первые N токенов при перемешивании описаний
+$do_not_interrupt = 0 # Не прерывать работу скрипта вопросами
 
 # Логгирование и дебаг
 $logging_enabled = 0
@@ -120,13 +121,13 @@ if ($is_structure_wrong -eq 0) { Get-ChildItem -Path $reg_dir -Directory | % { i
     $repeats = [int]$parts[0]
     $reg_imgs = Get-ChildItem $_.FullName -Depth 0 -File -Include *.jpg, *.png, *.webp | Measure-Object | ForEach-Object { $_.Count }
 	if ($iter -eq 0) { Write-Output "Регуляризационные изображения:" }
-	if ($reg_imgs -eq 0)
+	if ($do_not_interrupt -le 0) { if ($reg_imgs -eq 0)
 	{
 		Write-ColorOutput darkyellow "Внимание: папка для регуляризационных изображений присутствует, но в ней ничего нет"
 		do { $abort_script = Read-Host "Прервать выполнение скрипта? (y/N)" }
-		until (($abort_script -eq "y") -or ($abort_script -ceq "N"))
+		until ($abort_script -eq "y" -or $abort_script -ceq "N")
 		return
-	}
+	} }
 	else
 	{
 		$img_repeats = ($repeats * $reg_imgs)
@@ -142,20 +143,20 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 	
 	if ($desired_training_time -gt 0) 
 	{
-		if ($my_training_speed -match '\d+[.]\d+it[\/\\]s' -or $my_training_speed -match '\d+[.]\d+s[\/\\]it')
+		if ($gpu_training_speed -match '\d+[.]\d+it[\/\\]s' -or $gpu_training_speed -match '\d+[.]\d+s[\/\\]it')
 		{
 			Write-Output "Используем desired_training_time для вычисления шагов обучения, учитывая скорость GPU"
-			$speed_value = $my_training_speed -replace '[^.0-9]'
-			if ([regex]::split($my_training_speed, '[\/\\]') -replace '\d+.\d+' -eq 's') { $speed_value = 1 / $speed_value }
+			$speed_value = $gpu_training_speed -replace '[^.0-9]'
+			if ([regex]::split($gpu_training_speed, '[\/\\]') -replace '\d+.\d+' -eq 's') { $speed_value = 1 / $speed_value }
 			$max_train_steps = [float]$speed_value * 60 * $desired_training_time
 			if ($reg_imgs -gt 0)
 			{
 				$max_train_steps *= 2
 				$max_train_steps = [math]::Round($max_train_steps)
 				Write-Output "Количество регуляризационных изображений больше 0"
-				do { $reg_img_compensate_time = Read-Host "Вы хотите уменьшить количество шагов вдвое для компенсации увеличенного времени? (y/N)" }
-				until (($reg_img_compensate_time -eq "y") -or ($reg_img_compensate_time -ceq "N"))
-				if ($reg_img_compensate_time -eq "y")
+				if ($do_not_interrupt -le 0) { do { $reg_img_compensate_time = Read-Host "Вы хотите уменьшить количество шагов вдвое для компенсации увеличенного времени? (y/N)" } }
+				until (($reg_img_compensate_time -eq "y" -or $reg_img_compensate_time -ceq "N") -or $do_not_interrupt -ge 1)
+				if ($reg_img_compensate_time -eq "y" -or $do_not_interrupt -ge 1)
 				{
 					[int]$max_train_steps = [math]::Round($max_train_steps / 2)
 					Write-Output "Количество шагов: $([math]::Round($($speed_value * 60), 2)) it/min * $desired_training_time минут(-а) ≈ $max_train_steps шаг(-ов)"
@@ -169,7 +170,7 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 		}
 		else
 		{
-			Write-ColorOutput red "Неверно указана скорость обучения my_training_speed!"
+			Write-ColorOutput red "Неверно указана скорость обучения gpu_training_speed!"
 			$abort_script = 1
 		}
 	}
@@ -228,11 +229,11 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 			else { $v2_resolution = "512" }
 			Write-Output "Stable Diffusion 2.x ($v2_resolution) чекпоинт"
 			$run_parameters += " --v2"
-			if ($clip_skip -eq -not 1)
+			if ($clip_skip -eq -not 1 -and $do_not_interrupt -le 0)
 			{
-			Write-ColorOutput darkyellow "Внимание: результаты обучения SD 2.x чекпоинта с clip_skip отличным от 1 могут быть непредсказуемые"
-			do { $abort_script = Read-Host "Прервать выполнение скрипта? (y/N)" }
-			until (($abort_script -eq "y") -or ($abort_script -ceq "N"))
+				Write-ColorOutput darkyellow "Внимание: результаты обучения SD 2.x чекпоинта с clip_skip отличным от 1 могут быть непредсказуемые"
+				do { $abort_script = Read-Host "Прервать выполнение скрипта? (y/N)" }
+				until ($abort_script -eq "y" -or $abort_script -ceq "N")
 			}
 		}
 	}

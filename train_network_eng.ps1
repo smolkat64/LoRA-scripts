@@ -18,7 +18,7 @@ $vae_path = "X:\SD-models\checkpoint.vae.pt" # Path to VAE
 
 # Custom training time (optional)
 $desired_training_time = 0 # If greater than 0, ignore number of images with repetitions when calculating training steps and train network for N minutes
-$my_training_speed = "1.23it/s | 1.23s/it" # Average training speed, depending on GPU. Possible values are XX.XXit/s or XX.XXs/it
+$gpu_training_speed = "1.23it/s | 1.23s/it" # Average training speed, depending on GPU. Possible values are XX.XXit/s or XX.XXs/it
 
 # Main variables
 $train_batch_size = 1 # How much images to train simultaneously. Higher number = less training steps (faster), higher VRAM usage
@@ -41,6 +41,7 @@ $mixed_precision = "fp16" # Whether to use mixed precision for training, and its
 $is_random_seed = 1 # Seed for training. 1 = random seed, 0 = static seed
 $shuffle_caption = 1 # Shuffle comma-separated captions
 $keep_tokens = 0 # Keep heading N tokens when shuffling caption tokens
+$do_not_interrupt = 0 # Do not interrupt script on questionable moments
 
 # Logging and debug
 $logging_enabled = 0
@@ -110,13 +111,13 @@ if ($is_structure_wrong -eq 0) { Get-ChildItem -Path $reg_dir -Directory | % { i
     $repeats = [int]$parts[0]
     $reg_imgs = Get-ChildItem $_.FullName -Depth 0 -File -Include *.jpg, *.png, *.webp | Measure-Object | ForEach-Object { $_.Count }
 	if ($iter -eq 0) { Write-Output "Regularization images:" }
-	if ($reg_imgs -eq 0)
+	if ($do_not_interrupt -le 0) { if ($reg_imgs -eq 0)
 	{
 		Write-ColorOutput darkyellow "Warning: regularization images folder exists, but is empty"
 		do { $abort_script = Read-Host "Abort script? (y/N)" }
 		until (($abort_script -eq "y") -or ($abort_script -ceq "N"))
 		return
-	}
+	} }
 	else
 	{
 		$img_repeats = ($repeats * $reg_imgs)
@@ -131,18 +132,18 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 	
 	if ($desired_training_time -gt 0) 
 	{
-		if ($my_training_speed -match '\d+[.]\d+it[\/\\]s' -or $my_training_speed -match '\d+[.]\d+s[\/\\]it')
+		if ($gpu_training_speed -match '\d+[.]\d+it[\/\\]s' -or $gpu_training_speed -match '\d+[.]\d+s[\/\\]it')
 		{
 			Write-Output "Using desired_training_time for calculation of training steps, considering the speed of the GPU"
-			$speed_value = $my_training_speed -replace '[^.0-9]'
-			if ([regex]::split($my_training_speed, '[\/\\]') -replace '\d+.\d+' -eq 's') { $speed_value = 1 / $speed_value }
+			$speed_value = $gpu_training_speed -replace '[^.0-9]'
+			if ([regex]::split($gpu_training_speed, '[\/\\]') -replace '\d+.\d+' -eq 's') { $speed_value = 1 / $speed_value }
 			$max_train_steps = [float]$speed_value * 60 * $desired_training_time
 			if ($reg_imgs -gt 0)
 			{
 				$max_train_steps *= 2
 				$max_train_steps = [math]::Round($max_train_steps)
 				Write-Output "Number of regularization images greater than 0"
-				do { $reg_img_compensate_time = Read-Host "Would you like to halve the number of training steps to make up for the increased time? (y/N)" }
+				if ($do_not_interrupt -le 0) { do { $reg_img_compensate_time = Read-Host "Would you like to halve the number of training steps to make up for the increased time? (y/N)" } }
 				until (($reg_img_compensate_time -eq "y") -or ($reg_img_compensate_time -ceq "N"))
 				if ($reg_img_compensate_time -eq "y")
 				{
@@ -158,7 +159,7 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 		}
 		else
 		{
-			Write-ColorOutput red "The learning rate is incorrect in my_training_speed variable!"
+			Write-ColorOutput red "The learning rate is incorrect in gpu_training_speed variable!"
 			$abort_script = 1
 		}
 	}
@@ -217,11 +218,11 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 			else { $v2_resolution = "512" }
 			Write-Output "Stable Diffusion 2.x ($v2_resolution) checkpoint"
 			$run_parameters += " --v2"
-			if ($clip_skip -eq -not 1)
+			if ($clip_skip -eq -not 1 -and $do_not_interrupt -le 0)
 			{
-			Write-ColorOutput darkyellow "Warning: training results of SD 2.x checkpoint with clip_skip other than 1 might be unpredictable"
-			do { $abort_script = Read-Host "Abort script? (y/N)" }
-			until (($abort_script -eq "y") -or ($abort_script -ceq "N"))
+				Write-ColorOutput darkyellow "Warning: training results of SD 2.x checkpoint with clip_skip other than 1 might be unpredictable"
+				do { $abort_script = Read-Host "Abort script? (y/N)" }
+				until (($abort_script -eq "y") -or ($abort_script -ceq "N"))
 			}
 		}
 	}

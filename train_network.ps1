@@ -154,8 +154,8 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 				$max_train_steps *= 2
 				$max_train_steps = [math]::Round($max_train_steps)
 				Write-Output "Количество регуляризационных изображений больше 0"
-				if ($do_not_interrupt -le 0) { do { $reg_img_compensate_time = Read-Host "Вы хотите уменьшить количество шагов вдвое для компенсации увеличенного времени? (y/N)" } }
-				until (($reg_img_compensate_time -eq "y" -or $reg_img_compensate_time -ceq "N") -or $do_not_interrupt -ge 1)
+				if ($do_not_interrupt -le 0) { do { $reg_img_compensate_time = Read-Host "Вы хотите уменьшить количество шагов вдвое для компенсации увеличенного времени? (y/N)" }
+				until ($reg_img_compensate_time -eq "y" -or $reg_img_compensate_time -ceq "N") }
 				if ($reg_img_compensate_time -eq "y" -or $do_not_interrupt -ge 1)
 				{
 					[int]$max_train_steps = [math]::Round($max_train_steps / 2)

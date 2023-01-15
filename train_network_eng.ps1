@@ -115,7 +115,7 @@ if ($is_structure_wrong -eq 0) { Get-ChildItem -Path $reg_dir -Directory | % { i
 	{
 		Write-ColorOutput darkyellow "Warning: regularization images folder exists, but is empty"
 		do { $abort_script = Read-Host "Abort script? (y/N)" }
-		until (($abort_script -eq "y") -or ($abort_script -ceq "N"))
+		until ($abort_script -eq "y" -or $abort_script -ceq "N")
 		return
 	} }
 	else
@@ -143,8 +143,8 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 				$max_train_steps *= 2
 				$max_train_steps = [math]::Round($max_train_steps)
 				Write-Output "Number of regularization images greater than 0"
-				if ($do_not_interrupt -le 0) { do { $reg_img_compensate_time = Read-Host "Would you like to halve the number of training steps to make up for the increased time? (y/N)" } }
-				until (($reg_img_compensate_time -eq "y") -or ($reg_img_compensate_time -ceq "N"))
+				if ($do_not_interrupt -le 0) { do { $reg_img_compensate_time = Read-Host "Would you like to halve the number of training steps to make up for the increased time? (y/N)" }
+				until ($reg_img_compensate_time -eq "y" -or $reg_img_compensate_time -ceq "N") }
 				if ($reg_img_compensate_time -eq "y")
 				{
 					[int]$max_train_steps = [math]::Round($max_train_steps / 2)
@@ -222,7 +222,7 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 			{
 				Write-ColorOutput darkyellow "Warning: training results of SD 2.x checkpoint with clip_skip other than 1 might be unpredictable"
 				do { $abort_script = Read-Host "Abort script? (y/N)" }
-				until (($abort_script -eq "y") -or ($abort_script -ceq "N"))
+				until ($abort_script -eq "y" -or $abort_script -ceq "N")
 			}
 		}
 	}

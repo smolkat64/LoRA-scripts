@@ -83,7 +83,7 @@ function WCO($BackgroundColor, $ForegroundColor, $NewLine) {
 	$host.UI.RawUI.ForegroundColor = $fc
 }
 
-$current_version = "1.0"
+$current_version = "1.02"
 
 # Аутизм №1
 if ($dont_draw_flags -le 0) {
@@ -336,8 +336,6 @@ if ($restart -ne 1 -and $abort_script -ne "y") { foreach ($script_string in $scr
 	}
 } }
 
-if ($restart -eq 1) { powershell -File $PSCommandPath }
-
 # Аутизм №2
 Write-Output ""
 if ($dont_draw_flags -le 0) {
@@ -346,4 +344,6 @@ $version_string_length = $version_string.Length
 while ($strl -lt ($([system.console]::BufferWidth))) { $strl += 1; WCO white white 1 " " }; Write-Output ""; $strl = 0; while ($version_string_length -lt $(($([system.console]::BufferWidth) + $version_string.Length) / 2)) { WCO darkblue white 1 " "; $version_string_length += 1 }; WCO darkblue white 1 $version_string; $version_string_length = $version_string.Length; while ($version_string_length -lt $(($([system.console]::BufferWidth) + $version_string.Length) / 2 - $version_string.Length % 2 + $([system.console]::BufferWidth) % 2)) { WCO darkblue white 1 " "; $version_string_length += 1 }; while ($strl -lt ($([system.console]::BufferWidth))) { $strl += 1; WCO darkred white 1 " " }
 Write-Output "`n" }
 
-#ver=1.01
+if ($restart -eq 1) { powershell -File $PSCommandPath }
+
+#ver=1.02

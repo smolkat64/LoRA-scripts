@@ -101,7 +101,7 @@
 
 #### Способ 1 – скрипт
 1. Клонировать репозиторий [sd-scripts от kohya-ss](https://github.com/kohya-ss/sd-scripts) или скачать его
-2. Скачать [скрипт (ПКМ \-> "Сохранить как...")](https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/train_network.ps1) (обновлено: 14.01.2023 22:01 по МСК)
+2. Скачать [скрипт (ПКМ \-> "Сохранить как...")](https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9/train_network.ps1) (иногда обновляется)
 !!! info PowerShell
 	Данный скрипт предназначен для PowerShell, но это не значит что он доступен только пользователям последних версий Windows. Не все знают, но [PowerShell доступен для всех версий Windows начиная с XP, на Linux, а также на macOS](https://github.com/PowerShell/PowerShell/releases).
 3. Открыть PowerShell и поочерёдно выполнить следующие команды:

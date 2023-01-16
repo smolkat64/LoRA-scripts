@@ -5,6 +5,8 @@
 ***
 ## Содержание
 [TOC]
+!!! note
+	Присоединяйтесь к [обсуждениям](https://github.com/anon-1337/LoRA-scripts/discussions) на GitHub если вам есть что добавить.
 ***
 ## Что это
 

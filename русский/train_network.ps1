@@ -102,17 +102,18 @@ $script_origin = (get-location).path
 Get-NetConnectionProfile | foreach { if ($_.IPv4Connectivity -eq "Internet") { $internet_available = 1 } }
 sleep 3
 if ((git --help) -and (curl --help) -and $internet_available -eq 1 -and -not $TestRun -ge 1) {
-	$script_github = curl --silent "https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/train_network.ps1"
+	$script_url = "https://github.com/anon-1337/LoRA-scripts/raw/main/русский/train_network.ps1"
+	$script_github = curl --silent $script_url
 	$new_version = [float]$($script_github[$script_github.Length - 1] -replace "#ver=")
 	if ([float]$current_version -lt $new_version -and (Is-Numeric $new_version)) { 
 		Write-Output "Доступно обновление скрипта (v$current_version => v$new_version) по адресу:"
-		WCO black blue 0 "https://github.com/anon-1337/LoRA-scripts/blob/main/train_network.ps1"
+		WCO black blue 0 $script_url
 		do { $do_update = Read-Host "Выполнить обновление? (y/N)" }
 		until ($do_update -eq "y" -or $do_update -ceq "N")
 		if ($do_update -eq "y") {
 			$restart = 1
 			Set-Location -Path $script_origin
-			curl --silent "https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/train_network.ps1" --output "$PSCommandPath"
+			curl --silent $script_url --output "$PSCommandPath"
 			WCO black green 0 "Обновлено до версии $new_version!)"
 			Write-Output "Перезапуск..."
 			sleep 2 }

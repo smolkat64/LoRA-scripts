@@ -1,5 +1,5 @@
-﻿# LoRA retard-friendly train_network script v1.0 by anon
-# Последнее обновление: 15.01.23 18:04 по МСК
+﻿# LoRA retard-friendly train_network script v1.03 by anon
+# Последнее обновление: 16.01.23 06:28 по МСК
 # https://github.com/cloneofsimo/lora
 # https://github.com/kohya-ss/sd-scripts
 # https://rentry.org/2chAI_LoRA_Dreambooth_guide
@@ -67,7 +67,7 @@ $dont_draw_flags = 0 # Не рисовать флаги
 
 ##### Конец конфига #####
 
-if ($do_not_clear_host -ge 1) { Clear-Host } 
+if ($do_not_clear_host -le 0) { Clear-Host } 
 
 function Is-Numeric ($value) { return $value -match "^[\d\.]+$" }
 
@@ -83,7 +83,7 @@ function WCO($BackgroundColor, $ForegroundColor, $NewLine) {
 	$host.UI.RawUI.ForegroundColor = $fc
 }
 
-$current_version = "1.02"
+$current_version = "1.03"
 
 # Аутизм №1
 if ($dont_draw_flags -le 0) {
@@ -101,10 +101,10 @@ $internet_available = 0
 $script_origin = (get-location).path
 Get-NetConnectionProfile | foreach { if ($_.IPv4Connectivity -eq "Internet") { $internet_available = 1 } }
 sleep 3
-if ((git --help) -and (curl --help) -and $internet_available -eq 1 -and -not $TestRun -ge 1) {
-	$script_url = "https://github.com/anon-1337/LoRA-scripts/raw/main/русский/train_network.ps1"
+if ((git --help) -and (curl --help) -and $internet_available -eq 1 -and -not $TestRun -ge 1 -and $ChainedRun -eq 0) {
+	$script_url = "https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9/train_network.ps1"
 	$script_github = curl --silent $script_url
-	$new_version = [float]$($script_github[$script_github.Length - 1] -replace "#ver=")
+	$new_version = [float]$($script_github[$script_github.Length - 1] -replace "#[a-zA-Z=]+")
 	if ([float]$current_version -lt $new_version -and (Is-Numeric $new_version)) { 
 		Write-Output "Доступно обновление скрипта (v$current_version => v$new_version) по адресу:"
 		WCO black blue 0 $script_url
@@ -185,54 +185,46 @@ if ($is_structure_wrong -eq 0 -and $reg_dir -ne "") { Get-ChildItem -Path $reg_d
 			WCO black darkyellow 0 "Внимание: папка для регуляризационных изображений присутствует, но в ней ничего нет"
 			do { $abort_script = Read-Host "Прервать выполнение скрипта? (y/N)" }
 			until ($abort_script -eq "y" -or $abort_script -ceq "N")
-			return
-		}
-	 
+			return }
 		else {
 			$img_repeats = ($repeats * $reg_imgs)
 			Write-Output "`t$($parts[1]): $repeats повторени$(Word-Ending $repeats) * $reg_imgs изображени$(Word-Ending $reg_imgs) = $($img_repeats)"
-			$iter += 1
-		}
+			$iter += 1 }
 	}
 } } } }
 
 if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 {
-	
 	Write-Output "Количество обучающих изображений с повторениями: $total"
-	
 	if ($desired_training_time -gt 0) 
 	{
-		if ($gpu_training_speed -match '\d+[.]\d+it[\/\\]s' -or $gpu_training_speed -match '\d+[.]\d+s[\/\\]it')
+		Write-Output "desired_training_time > 0"
+		Write-Output "Используем desired_training_time для вычисления шагов обучения, учитывая скорость GPU"
+		if ($gpu_training_speed -match '^(?:\d+\.\d+|\d+|\.\d+)(?:(?:it|s)(?:\\|\/)(?:it|s))')
 		{
-			Write-Output "Используем desired_training_time для вычисления шагов обучения, учитывая скорость GPU"
 			$speed_value = $gpu_training_speed -replace '[^.0-9]'
 			if ([regex]::split($gpu_training_speed, '[\/\\]') -replace '\d+.\d+' -eq 's') { $speed_value = 1 / $speed_value }
 			$max_train_steps = [float]$speed_value * 60 * $desired_training_time
-			if ($reg_imgs -gt 0)
-			{
+			if ($reg_imgs -gt 0) {
 				$max_train_steps *= 2
 				$max_train_steps = [int]([math]::Round($max_train_steps))
 				Write-Output "Количество регуляризационных изображений больше 0"
 				if ($do_not_interrupt -le 0) { do { $reg_img_compensate_time = Read-Host "Вы хотите уменьшить количество шагов вдвое для компенсации увеличенного времени? (y/N)" }
 				until ($reg_img_compensate_time -eq "y" -or $reg_img_compensate_time -ceq "N") }
-				if ($reg_img_compensate_time -eq "y" -or $do_not_interrupt -ge 1)
-				{
+				if ($reg_img_compensate_time -eq "y" -or $do_not_interrupt -ge 1) {
 					$max_train_steps = [int]([math]::Round($max_train_steps / 2))
-					Write-Output "Количество шагов: $([math]::Round($($speed_value * 60), 2)) it/min * $desired_training_time минут(-а) ≈ $max_train_steps шаг(-ов)"
-				}
-				else
-				{
+					Write-Output "Количество шагов: $([math]::Round($($speed_value * 60), 2)) it/min * $desired_training_time минут(-а) ≈ $max_train_steps шаг(-ов)" }
+				else {
 					Write-Output "Вы выбрали нет. Увеличенное время компенсировано не будет, длительность тренировки увеличена вдвое"
-					Write-Output "Количество шагов: $([math]::Round($($speed_value * 60), 2)) it/min * $desired_training_time минут(-а) * 2 ≈ $max_train_steps шаг(-ов)"
-				}
+					Write-Output "Количество шагов: $([math]::Round($($speed_value * 60), 2)) it/min * $desired_training_time минут(-а) * 2 ≈ $max_train_steps шаг(-ов)" }
 			}
+			else {
+				$max_train_steps = [int]([math]::Round($max_train_steps))
+				Write-Output "Количество шагов: $([math]::Round($($speed_value * 60), 2)) it/min * $desired_training_time минут(-а) ≈ $max_train_steps training шаг(-ов)" }
 		}
-		else
-		{
+		else {
 			WCO black red 0 "Неверно указана скорость обучения gpu_training_speed!"
-			$abort_script = "y"
-		}
+			$abort_script = "y" }
 	}
 	else
 	{
@@ -308,11 +300,11 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 		Write-Output "$($run_parameters -split '--' | foreach { if ($_ -ceq '') { Write-Output '' } else { Write-Output --`"$_`n`" } } | foreach { $_ -replace '=', ' = ' })"
 		if ($test_run -le 0)
 		{
-			Set-Location $sd_scripts_dir
+			Set-Location -Path $sd_scripts_dir
 			.\venv\Scripts\activate
 			powershell accelerate launch --num_cpu_threads_per_process 12 train_network.py $run_parameters
 			deactivate
-			Set-Location $script_origin
+			Set-Location -Path $script_origin
 		}
 	}
 } }
@@ -344,6 +336,8 @@ $version_string_length = $version_string.Length
 while ($strl -lt ($([system.console]::BufferWidth))) { $strl += 1; WCO white white 1 " " }; Write-Output ""; $strl = 0; while ($version_string_length -lt $(($([system.console]::BufferWidth) + $version_string.Length) / 2)) { WCO darkblue white 1 " "; $version_string_length += 1 }; WCO darkblue white 1 $version_string; $version_string_length = $version_string.Length; while ($version_string_length -lt $(($([system.console]::BufferWidth) + $version_string.Length) / 2 - $version_string.Length % 2 + $([system.console]::BufferWidth) % 2)) { WCO darkblue white 1 " "; $version_string_length += 1 }; while ($strl -lt ($([system.console]::BufferWidth))) { $strl += 1; WCO darkred white 1 " " }
 Write-Output "`n" }
 
+sleep 3
+
 if ($restart -eq 1) { powershell -File $PSCommandPath }
 
-#ver=1.02
+#ver=1.03

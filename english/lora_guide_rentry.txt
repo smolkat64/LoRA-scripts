@@ -50,7 +50,7 @@ First, make sure that the checkpoint file *<model_name>.ckpt* is in the *stable-
 
 ## Preparing a dataset
 
-#### general advice
+#### General advice
 
 !!! info Advice #1 – difference between models
 	If you train for anime model (NAI, AnythingV3), make the description strictly in the style of Danbooru/Gelbooru tags. For example, *1girl, short hair, green eyes, black hair, school uniform...*.
@@ -68,7 +68,7 @@ First, make sure that the checkpoint file *<model_name>.ckpt* is in the *stable-
 	
 ***
 
-#### for kohya's script
+#### For kohya's script
 
 Dataset needs a certain folder structure:
 
@@ -92,7 +92,7 @@ The regularization images allow you to "separate" the object being trained (**co
 	Stock up on folders with 200 images *1boy, 1girl, photo of a man, photo of a woman* and you'll be happy.
 
 ***
-#### for sd_dreambooth_extension
+#### For sd_dreambooth_extension
 
 !!! warning The interface supports up to 3 concepts at a time.
     If you want to train more concepts, you have to mess around with JSON. [Example JSON](https://pastebin.com/kq02jzHD) for more than 3 concepts. Note the **missing** comma after the last concept.

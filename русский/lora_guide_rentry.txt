@@ -24,7 +24,7 @@
 1. Использовать в качестве дополнительных весов "на лету"
 2. Замерджить вместе с SD чекпоинтом
 
-#### cпособ 1 – кручение на лету а-ля HyperNetwork
+#### Cпособ 1 – кручение на лету а-ля HyperNetwork
 !!! note Это рекомендованный способ использования LoRA.
 Установить [расширение от kohya-ss](https://github.com/kohya-ss/sd-webui-additional-networks) для A1111-webui.
 По умолчанию файлы сетей хранятся в папке *stable-diffusion-webui\models\lora\\*
@@ -33,7 +33,7 @@
 ------ | ------
 ![](https://i.imgur.com/GvJhlWg.png) | ![](https://i.imgur.com/Ur9iFWk.png)
 
-#### cпособ 2 – патч модели
+#### Cпособ 2 – патч модели
 Установить [расширение от d8ahazard](https://github.com/d8ahazard/sd_dreambooth_extension) для A1111-webui.
 !!! error CKPT vs SAFETENSORS
     Файлы safetensors (пока) не поддерживаются! Из хороших новостей: обычно ckpt можно скачать там же, где качали safetensors.
@@ -51,7 +51,7 @@
 
 ## Подготовка датасета
 
-#### общие советы
+#### Общие советы
 
 !!! info Совет №1
 	Если тренируете на основе аниме моделей (NAI, AnythingV3), описание делать строго в стиле Danbooru/Gelbooru тэгов. Например, *1girl, short hair, green eyes, black hair, school uniform...*
@@ -68,7 +68,7 @@
 	
 ***
 
-#### для скрипта
+#### Для скрипта
 
 Датасету необходима определённая структура папок:
 
@@ -92,7 +92,7 @@
 	Запаситесь папками с двухстами изображениями *1boy, 1girl, photo of a man, photo of a woman* и будет вам счастье.
 
 ***
-#### для sd_dreambooth_extension
+#### Для sd_dreambooth_extension
 
 !!! warning В интерфейсе поддерживается до 3 концептов включительно
     Если вы хотите тренировать больше концептов, придется возиться с JSON.  [Пример JSON](https://pastebin.com/kq02jzHD) больше, чем на 3 концепта. Обратите внимание на **отстуствие** запятой после последнего концепта.
@@ -110,7 +110,7 @@
 
 ## Тренировка
 
-#### с помощью скрипта
+#### С помощью скрипта
 
 1. Клонировать репозиторий [sd-scripts от kohya-ss](https://github.com/kohya-ss/sd-scripts) или скачать его
 2. Скачать [скрипт (ПКМ \-> "Сохранить как...")](https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9/train_network.ps1) (иногда обновляется)
@@ -205,7 +205,7 @@ $network_dim = 128
 
 ***
 
-#### с помощью sd_dreambooth_extension
+#### С помощью sd_dreambooth_extension
 
 !!! warning Гайд основан на версии [c5cb58328c555ac27679422b1da940a9b19de6f2.](https://github.com/d8ahazard/sd_dreambooth_extension/tree/c5cb58328c555ac27679422b1da940a9b19de6f2)
     Новые версии не влезают в 8ГБ VRAM и могут иметь другие проблемы.

@@ -1,6 +1,6 @@
 # LoRA guide
 -> by anons <-
--> last update: 14.01.2023 <-
+-> last update: 15.01.2023 <-
 -> [**Русская версия**](https://rentry.org/2chAI_LoRA_Dreambooth_guide)<-
 ***
 ## Table of contents
@@ -193,42 +193,44 @@ The following are grids comparing different *learning_rate*. All networks were t
 
 ***
 #### Method 2 – sd_dreambooth_extension
-!!! error MAY not work on graphics cards with less than 10GB VRAM. Expect updates.
+!!! warning The guide is based on the version [c5cb58328c555ac27679422b1da940a9b19de6f2](https://github.com/d8ahazard/sd_dreambooth_extension/tree/c5cb58328c555ac27679422b1da940a9b19de6f2).
+    New versions do not fit into 8GB VRAM and may have other problems.
 !!! error CKPT vs SAFETENSORS
     The safetensors files are not (yet) supported! Good news: ckpt can usually be downloaded from the same place where safetensors was downloaded.
+	
+Install the sd_dreambooth_extension from the Extensions tab, restart webui and turn it off afterwards.
+Download version  c5cb58328c555ac27679422b1da940a9b19de6f2 [here](http://c2n.me/4hArEi5.zip) or on [GitHub.](https://github.com/d8ahazard/sd_dreambooth_extension/tree/c5cb58328c555ac27679422b1da940a9b19de6f2)
+Extract the contents of the folder sd_dreambooth_extension-c5cb58328c555ac27679422b1da940a9b19de6f2 into stable-diffusion-webui\extensions\sd_dreambooth_extension\ **(overwrite).**
+
 First, make sure that the checkpoint file we are going to study, <name>.ckpt is in the path *stable-diffusion-webui\models\Stable-diffusion\\*, then:
 
-1. Open a new tab | 2. Open the Settings tab, click the "Performance Wizard (WIP)" button, and check the "Use LORA" checkbox
+1. Open a new tab | 2. Press the "Performance Wizard (WIP)" button
 :----: | :----:
-![](https://i.imgur.com/LZzQvw1.png) | ![](https://i.imgur.com/OVPcD71.png)
-**3. Go to the Create tab, come up with a name, select the source model "Source Checkpoint" and click Create Model** |
-![](https://c2n.me/4hz7Bki.jpg)
+![](https://i.imgur.com/LZzQvw1.png) | ![](https://c2n.me/4hArOym.jpg)
+**3. Come up with a name, select the source model "Source Checkpoint" and click Create** |
+![](https://c2n.me/4hArRs9.jpg)
 
--> **4. Check the settings (from top to bottom):** <-
+-> **4. Check the settings in the "Parameters" tab (from top to bottom):** <-
 
-**General**
-- [x] Use LORA
-- [ ] Train Imagic Only
-- [x] Generate Classification Images Using txt2img
 
 **Intervals**
 - Training Steps Per Image (Epochs): 25 to 150.
-`More is better, but it takes longer. The number of iterations for EVERY image.`
-- Pause After N Epochs 0
-- Amount of time to pause between Epochs (s) 0
-- Save Model Frequency (Epochs) 
-`The more often the model is saved, the more choice from the younger versions, if the newer ones started to go fucked up`
-- Save Preview(s) Frequency (Epochs) 
-`The more often the previews are saved, the faster you can see that the model is overtrained and starting to get fucked up`
-!!! info Both "Save" items slow down learning because they essentially suspend it for their own business.
-    Set equal values from 5 to 25.
+!!! info More is better, but it takes longer. The number of iterations for EVERY image.
+	LoRA can be overtrained just like an embedding or hypernetwork. Too much training duration is not necessary.
+- Max Training Steps: 0
+- Pause After N Epochs: 0
+- Amount of time to pause between Epochs (s): 60
+- [x] Use Lifetime Steps/Epochs When Saving
+- [ ] Save Preview/Ckpt Every Epoch
+- Save Checkpoint Frequency: 2000 or more
+`The more often the model is saved, the more choice you have from the younger versions if the newer ones start to go fucked up. They consume disk space!`
+- Save Preview(s) Frequency: 500 or more
+`The more often the previews are saved, the faster you can see that the model is overtrained and starting to go fucked up.`
+!!! info Both "Save" options slow down learning because they essentially suspend it for their own business.
 
-**Batching**
-- Batch Size 1
-- Gradient Accumulation Steps 1
-- Class Batch Size 1
-- [x] Set Gradients to None When Zeroing
-- [x] Gradient Checkpointing 
+**Batch**
+- Batch Size: 1
+- Class Batch Size: 1
 
 **Learning Rate**
 !!! note Leave the whole "Learning Rate" section unchanged.
@@ -239,8 +241,6 @@ First, make sure that the checkpoint file we are going to study, <name>.ckpt is 
 `Images must be cropped beforehand and meaningfully`
 - [x] Apply Horizontal Flip
 `Not recommended for asymmetrical characters`
-- Sanity Sample Prompt – leave blank.
-- Sanity Sample Seed 420420 for luck.
 
 **Miscellaneous**
 - Pretrained VAE Name or Path – leave blank.
@@ -248,30 +248,37 @@ First, make sure that the checkpoint file we are going to study, <name>.ckpt is 
 !!! warning The "Use Concepts List" checkbox has priority over the settings in the "Concepts" tab.
     "Use Concepts List" should be **unchecked** for 3 or fewer concepts and customize them through the interface, as described below. If using JSON for 3+ concepts, put the full path to the file into the "Concepts List" and check the box.
 
-- API Key – leave blank.
-- Discord Webhook – leave blank.
-
 -> **5. Open the Advanced submenu at the bottom and check the settings:** <-
 !!! info BF16 > FP16
     If your hardware supports BF16, it is better to choose it.
 !!! info Max Token Length
     Open your largest description file, copy its contents and put it into the WebUI promt. The counter on the right will display the length of the token. If less than 75, put 75. If more than 75 – put 150. If more than 150, then put 225. The maximum value is 300.
-!!! info Clip Skip    
-    1 for SD-based checkpoints, 2 for NAI-based checkpoints.
--> ![](http://c2n.me/4hzQ3DS.jpg) <-
+-> ![](https://c2n.me/4hAs2Z5.jpg) <-
 
 -> **6. Go to the Concepts tab and configure the concepts:** <-
 
-[Example of a configured concept](http://c2n.me/4hzbMWW.jpg) (long screenshot), set only the path to the folder with images and [filewords] in the fields "Instance Token", "Class Token", "Instance Prompt", "Class Prompt" and "Sample Image Prompt". All other settings remain (but compare with the screenshot, just in case).
-
--> **7. In the "Saving" tab enable saving of LoRA pt-files:** <-
-
-- [x] Generate lora weights when saving during training.
-- [x] Generate lora weights when training completes.
-- [x] Generate lora weights when training is canceled.
+[Example of a configured concept](http://c2n.me/4hAs5Ir.jpg) (long screenshot), set only the path to the folder with images and [filewords] in the fields "Instance Token", "Instance Prompt" and "Sample Image Prompt". All other settings leave as is (but just in case check with the screenshot).
 
 !!! note After that, click "Save Settings" at the top and start the training with the "Train" button.
     The previews are saved in the *stable-diffusion-webui\models\dreambooth\<model_name>\samples\\* folder. The pt files are stored in *stable-diffusion-webui\models\lora\\*.
+	
+-> **What settings can you tweak if you have 10GB of VRAM or more:** <-
+!!! warning Training failed with an error – overdoing it, not enough VRAM, rollback.
+    You've closed all the background applications that also need VRAM, right?..
+Continuing LORA training:
+- [x] Train Text Encoder
+`Should noticeably improve the result.`
+- [x] Use 8bit Adam
+`May slightly improve the result.`
+- [ ] Don't Cache Latents
+`Should speed up learning a little.`
+Training a full-fledged dreambooth (generates complete models, watch out for free space):
+- [ ] Use LORA
+`It probably won't start if you don't have 24GB of VRAM.`
+- [x] Use EMA
+`Should improve the result slightly.`
+
+***
 
 ## Troubleshooting (script)
 
@@ -289,3 +296,19 @@ A: Install [PowerShell 6](https://github.com/PowerShell/PowerShell/releases/tag/
 
 Q: I get red console errors when I run a script!
 A: Update [PowerShell](https://github.com/PowerShell/PowerShell/releases).
+
+## Решение проблем с дополнением
+
+!!! note New and old versions
+    Strictly speaking, the new version *might* work fine. But on 15.01.2023 the author of the guide could not train anything on it, except garbage (on two different PCs), while the old version works fine.
+	Settings in the new version are about the same – you can try it.
+	
+Q: На превью вместо [нормальных изображений](http://c2n.me/4hzOvG8.png) генерируется [мусор.](http://c2n.me/4hzOx6o.png)
+Q: The preview generates [garbage](http://c2n.me/4hzOx6o.png) instead of [normal images](http://c2n.me/4hzOvG8.png)
+A: Make sure you roll back to the old version according to the guide. If that doesn't work, you probably have too fresh xformers, torch or torchvision. Create a separate webui directory for dreambooth (you can with the newest version of webui) and let it install the old version. It should work fine.
+
+Q: My dreambooth interface looks different!
+A: Check that you rolled back the version to the old one according to the guide. If you updated extensions in the extensions tab, it updated dreambooth as well. Roll back again in the same way. It's better to have a separate webui directory for dreambooth that you don't update. If it works, don't touch it.
+
+Q: Training crashes with an error `RuntimeError: CUDA out of memory`
+A: Check that you rolled back the version to the old version according to the guide. The functionality of the old version is confirmed with 8GB VRAM cards, and not confirmed with 6. The new version needs [at least 10.](https://github.com/d8ahazard/sd_dreambooth_extension/issues/755)

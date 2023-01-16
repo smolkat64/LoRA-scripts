@@ -141,13 +141,13 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 			if ($reg_imgs -gt 0)
 			{
 				$max_train_steps *= 2
-				$max_train_steps = [math]::Round($max_train_steps)
+				$max_train_steps = [int]([math]::Round($max_train_steps))
 				Write-Output "Number of regularization images greater than 0"
 				if ($do_not_interrupt -le 0) { do { $reg_img_compensate_time = Read-Host "Would you like to halve the number of training steps to make up for the increased time? (y/N)" }
 				until ($reg_img_compensate_time -eq "y" -or $reg_img_compensate_time -ceq "N") }
 				if ($reg_img_compensate_time -eq "y")
 				{
-					[int]$max_train_steps = [math]::Round($max_train_steps / 2)
+					$max_train_steps = [int]([math]::Round($max_train_steps / 2))
 					Write-Output "Total training steps: $([math]::Round($($speed_value * 60), 2)) it/min * $desired_training_time minute(-s) ≈ $max_train_steps training step(-s)"
 				}
 				else
@@ -182,7 +182,7 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 	
 	if ($lr_warmup_ratio -lt 0.0) { $lr_warmup_ratio = 0.0 }
 	if ($lr_warmup_ratio -gt 1.0) { $lr_warmup_ratio = 1.0 }
-	$lr_warmup_steps = [math]::Round($max_train_steps * $lr_warmup_ratio)
+	$lr_warmup_steps = [int]([math]::Round($max_train_steps * $lr_warmup_ratio))
 	
 	$image_dir = $image_dir.TrimEnd("\", "/")
 	$reg_dir = $reg_dir.TrimEnd("\", "/")

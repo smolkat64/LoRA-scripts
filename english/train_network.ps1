@@ -244,5 +244,4 @@ if ($is_structure_wrong -eq 0 -and ($abort_script -eq "n" -or $abort_script -eq 
 		}
 	}
 }
-
-# 14.01.23 by anon
+#v0.9

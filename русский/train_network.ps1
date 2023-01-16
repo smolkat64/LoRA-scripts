@@ -211,13 +211,13 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 			if ($reg_imgs -gt 0)
 			{
 				$max_train_steps *= 2
-				$max_train_steps = [math]::Round($max_train_steps)
+				$max_train_steps = [int]([math]::Round($max_train_steps))
 				Write-Output "Количество регуляризационных изображений больше 0"
 				if ($do_not_interrupt -le 0) { do { $reg_img_compensate_time = Read-Host "Вы хотите уменьшить количество шагов вдвое для компенсации увеличенного времени? (y/N)" }
 				until ($reg_img_compensate_time -eq "y" -or $reg_img_compensate_time -ceq "N") }
 				if ($reg_img_compensate_time -eq "y" -or $do_not_interrupt -ge 1)
 				{
-					[int]$max_train_steps = [math]::Round($max_train_steps / 2)
+					$max_train_steps = [int]([math]::Round($max_train_steps / 2))
 					Write-Output "Количество шагов: $([math]::Round($($speed_value * 60), 2)) it/min * $desired_training_time минут(-а) ≈ $max_train_steps шаг(-ов)"
 				}
 				else
@@ -252,14 +252,14 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 	
 	if ($lr_warmup_ratio -lt 0.0) { $lr_warmup_ratio = 0.0 }
 	if ($lr_warmup_ratio -gt 1.0) { $lr_warmup_ratio = 1.0 }
-	$lr_warmup_steps = [math]::Round($max_train_steps * $lr_warmup_ratio)
+	$lr_warmup_steps = [int]([math]::Round($max_train_steps * $lr_warmup_ratio))
 	
 	$image_dir = $image_dir.TrimEnd("\", "/")
 	$reg_dir = $reg_dir.TrimEnd("\", "/")
 	$output_dir = $output_dir.TrimEnd("\", "/")
 	$logging_dir = $logging_dir.TrimEnd("\", "/")
 	
-	$run_parameters = "--network_module=networks.lora --pretrained_model_name_or_path=`"$ckpt`" --train_data_dir=`"$image_dir`" --output_dir=`"$output_dir`" --output_name=`"$output_name`" --caption_extension=`".txt`" --resolution=$resolution --prior_loss_weight=1 --enable_bucket --min_bucket_reso=256 --max_bucket_reso=1024 --train_batch_size=$train_batch_size --lr_warmup_steps=$lr_warmup_steps --learning_rate=$learning_rate --unet_lr=$unet_lr --text_encoder_lr=$text_encoder_lr --max_train_steps=$max_train_steps --use_8bit_adam --xformers --save_every_n_epochs=$save_every_n_epochs --save_last_n_epochs=$save_last_n_epochs --save_model_as=safetensors --keep_tokens=$keep_tokens --clip_skip=$clip_skip --seed=$seed --network_dim=$network_dim --cache_latents --lr_scheduler=$scheduler"
+	$run_parameters = "--network_module=networks.lora --pretrained_model_name_or_path=`"$ckpt`" --train_data_dir=`"$image_dir`" --output_dir=`"$output_dir`" --output_name=`"$output_name`" --caption_extension=`".txt`" --resolution=$resolution --prior_loss_weight=1 --enable_bucket --min_bucket_reso=256 --max_bucket_reso=1024 --train_batch_size=$train_batch_size --lr_warmup_steps=$lr_warmup_steps --learning_rate=$learning_rate --unet_lr=$unet_lr --text_encoder_lr=$text_encoder_lr --max_train_steps=$([int]$max_train_steps) --use_8bit_adam --xformers --save_every_n_epochs=$save_every_n_epochs --save_last_n_epochs=$save_last_n_epochs --save_model_as=safetensors --keep_tokens=$keep_tokens --clip_skip=$clip_skip --seed=$seed --network_dim=$network_dim --cache_latents --lr_scheduler=$scheduler"
 	
 	if ($reg_dir -ne "") { $run_parameters += " --reg_data_dir=`"$reg_dir`"" }
 	
@@ -345,4 +345,4 @@ $version_string_length = $version_string.Length
 while ($strl -lt ($([system.console]::BufferWidth))) { $strl += 1; WCO white white 1 " " }; Write-Output ""; $strl = 0; while ($version_string_length -lt $(($([system.console]::BufferWidth) + $version_string.Length) / 2)) { WCO darkblue white 1 " "; $version_string_length += 1 }; WCO darkblue white 1 $version_string; $version_string_length = $version_string.Length; while ($version_string_length -lt $(($([system.console]::BufferWidth) + $version_string.Length) / 2 - $version_string.Length % 2 + $([system.console]::BufferWidth) % 2)) { WCO darkblue white 1 " "; $version_string_length += 1 }; while ($strl -lt ($([system.console]::BufferWidth))) { $strl += 1; WCO darkred white 1 " " }
 Write-Output "`n" }
 
-#ver=1.0
+#ver=1.01

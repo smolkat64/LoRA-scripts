@@ -5,6 +5,8 @@
 ***
 ## Table of contents
 [TOC]
+!!! note
+	Consider joining the [discussions](https://github.com/anon-1337/LoRA-scripts/discussions) on GitHub if you have something useful to add.
 ***
 ## What is LoRA?
 
@@ -300,7 +302,7 @@ A: Update [PowerShell](https://github.com/PowerShell/PowerShell/releases).
 ## Troubleshooting (extension)
 
 !!! note New and old versions
-    Strictly speaking, the new version *might* work fine. But on 15.01.2023 the author of the guide could not train anything on it, except garbage (on two different PCs), while the old version works fine.
+    Strictly speaking, the new version *might* work fine. But as of 15.01.2023 the author of the guide could not train anything on it, except garbage (on two different PCs), while the old version works fine.
 	Settings in the new version are about the same – you can try it.
 	
 Q: The preview generates [garbage](http://c2n.me/4hzOx6o.png) instead of [normal images](http://c2n.me/4hzOvG8.png)

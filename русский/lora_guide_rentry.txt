@@ -86,7 +86,8 @@
 Папка *regularization_images* может быть пустой, наличие регуляризационных изображений необязательно.
 [**Регуляризационные изображения**](https://github.com/d8ahazard/sd_dreambooth_extension/wiki/Basics#dreambooth) помогают улучшить точность тренировки.
 Регуляризационные изображения позволяют "отделить" тренируемый объект (**концепт**) от стиля изображения. Во время обучения сеть будет "параллельно" (на самом деле последовательно, при наличии регуляризационных изображений по-хорошему время тренировки должно быть увеличено вдвое) тренироваться как не надо, чтобы выглядел **концепт**. Переносимость между моделями такой сети LoRA станет лучше.
-Далее идёт пример сравнения сетей, натренированных на датасетах без рег. изображений и с. Одинаковые настройки, одинаковый сид обучения и генерации. [Датасет](https://drive.google.com/drive/folders/1SZyqTssCq1TCk7ZMaag0CJUnLxdFkx3W?usp=share_link).
+Далее идёт пример сравнения сетей, натренированных на датасетах без рег. изображений и с. Одинаковые [настройки](https://pastebin.com/BLPs1BH2), одинаковый сид обучения и генерации. Обе сети тренировались на обучающих изображениях 30 минут со скоростью 1.91s/it, REG сеть дополнительно обучалась на рег. изображениях в течении 30 минут. [Датасет](https://drive.google.com/drive/folders/1SZyqTssCq1TCk7ZMaag0CJUnLxdFkx3W?usp=share_link).
+Обратите внимание на *разнообразность* изображений с регуляризацией. Изображения в нерегуляризированной сети выглядят как плохие копии друга друга, несмотря на разный сид:
 
 -> ![](https://i.imgur.com/M014bvx.jpg) <-
 -> ![](https://i.imgur.com/GpzLriQ.jpg) <-
@@ -122,15 +123,17 @@
 	Данный скрипт предназначен для PowerShell, но это не значит что он доступен только пользователям последних версий Windows. Не все знают, но [PowerShell доступен для всех версий Windows начиная с XP, на Linux, а также на macOS](https://github.com/PowerShell/PowerShell/releases).
 3. Открыть PowerShell и поочерёдно выполнить следующие команды:
 ```powershell
-cd <путь к папке sd-scripts>
+Set-Location <путь к папке sd-scripts> # Переходим в каталог репозитория
 
-python -m venv --system-site-packages venv
-.\venv\Scripts\activate
+python -m venv venv # Создаём виртуальное окружение
+.\venv\Scripts\activate # Активируем его
 
+# Устанавливаем torch и torchvision, xformers, а также необходимые зависимости
 pip install torch==1.12.1+cu116 torchvision==0.13.1+cu116 --extra-index-url https://download.pytorch.org/whl/cu116
 pip install --upgrade -r requirements.txt
 pip install -U -I --no-deps https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/f/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl
 
+# Копируем скомпилированные под Windows CUDA библиотеки. На Linux этот шаг не обязателен
 cp .\bitsandbytes_windows\*.dll .\venv\Lib\site-packages\bitsandbytes\
 cp .\bitsandbytes_windows\cextension.py .\venv\Lib\site-packages\bitsandbytes\cextension.py
 cp .\bitsandbytes_windows\main.py .\venv\Lib\site-packages\bitsandbytes\cuda_setup\main.py
@@ -168,7 +171,7 @@ $clip_skip = 1
 ```
 
 **$train_batch_size**: при увеличении данного значения, вероятно также требуется [увеличение *$learning_rate*](https://github.com/cloneofsimo/lora/discussions/53#discussioncomment-4437440).
-**$num_epochs**: на вопрос сколько нужно ставить однозначного ответа нет, не менее важную роль играют датасет и другие настройки. Больше эпох – больше времени на тренировку, но большое значение не обязательно сделает сеть лучше. В определенный момент тренировки точность практически перестанет расти, поэтому ставить безумно большое значение не имеет смысла. Можно начать с 5. Рекомендую в первый раз оставить настройки как есть и протестировать все 10 эпох на одном сиде, чтобы посмотреть, сколько их примерно нужно.
+**$num_epochs**: с помощью этой переменной расчитывается количество шагов обучения. Чем больше эпох, тем дольше обучается сеть. Что касаемо результата на больших и малых значениях, см. описание переменной *$learning_rate*. Универсального ответа нет.
 **$max_token_length**: откройте свой самый большой файл описания, скопируйте его содержимое и поместите в промт WebUI. Справа на счетчике отобразится длина токена. Если меньше 75, ставим 75. Если больше 75 – ставьте 150. Если больше 150 – ставьте 225. Значения больше 225 скрипт не поддерживает.
 **$clip_skip**: 1 для SD-основанных чекпоинтов, 2 для NAI-основанных.
 
@@ -183,25 +186,48 @@ $network_dim = 128
 ```
 
 **$learning_rate**: значение 1e-4 рекомендовано для чекпоинтов, основанных на SD 1.x. Для 2.x – непонятно, кто-то говорит что [получил ужасные результаты с такими настройками](https://github.com/d8ahazard/sd_dreambooth_extension/issues/486#issuecomment-1345884109). Но у меня получались достойные лица и на рекомендованных настройках.
-В чем отличие высокой и низкой скорости? Существует даже отдельный [сайт](https://losslandscape.com/explorer), в котором это наглядно показано: на слишком низкой скорости обучение застревает и сеть ничему не обучается, на слишком большой происходят непредсказуемые, но вряд ли хорошие вещи.
+В чем отличие высокой и низкой скорости? 
+- низкая скорость и малое количество шагов приводят к недонасыщению сети. У сети будут проблемы с воспроизведением концепта.
+- большая скорость и количество приводят к перенасыщению сети. У вас не получится сгенерировать ничего кроме концепта, независимо от промта, который вы используете.
+
+Существует [сайт](https://losslandscape.com/explorer) с наглядной демонстрацией.
 Далее идут таблицы со сравнением различных *learning_rate*. Все сети были натренированы на одном и том же [датасете](https://drive.google.com/drive/folders/1JjIV61fMUyJKYOxZpYokx7cd81awtBWc) ([pixiv автора рисунков](https://www.pixiv.net/en/users/32808113)), все изображения были сгенерированы на одном сиде с разными промтами. Обратите внимание на то, как сети при различных настройках обучились следующим тегам: *harusameriburo* (стиль художника), *jacket*, *cloudy sky*, *shoes*, *ligne claire*, *backpack*, *blush stickers*.
 ![](https://files.catbox.moe/dh3c0w.png)
 -> learning_rate = **X**, unet_lr = learning_rate, text_encoder_lr = learning_rate, scheduler = linear <-
 
-**$unet_lr**: скорость обучения U-Net. [Поле для экспериментов](https://github.com/cloneofsimo/lora/discussions/69).
+**$unet_lr**: скорость обучения U-Net. U-Net отвечает за преобразование шума в изображение. [Поле для экспериментов](https://github.com/cloneofsimo/lora/discussions/69).
 ![](https://files.catbox.moe/wmue60.png)
 -> learning_rate = 1e-4, unet_lr = **X**, text_encoder_lr = learning_rate, scheduler = linear <-
 
-**$text_encoder_lr**: некоторые советуют уменьшать скорость обучения текстового энкодера в два раза относительно learning_rate (т.е. до значения 5e-5), мол, так результаты лучше. Поле для экспериментов.
+**$text_encoder_lr**: скорость обучения текстового энкодера CLIP. Благодаря текстовому энкодеру изображение соответствует текстовому описанию. Есть мнение, что стоит уменьшать скорость обучения текстового энкодера в два раза относительно *learning_rate* (т.е. до значения 5e-5) для улучшения конечного результата. Также есть информация, что обучение текстового энкодера [благоприятно влияет на лица](https://huggingface.co/blog/dreambooth#fine-tuning-the-text-encoder). Поле для экспериментов.
 ![](https://files.catbox.moe/py6lq3.png)
 -> learning_rate = 1e-4, unet_lr = learning_rate, text_encoder_lr = **X**, scheduler = linear <-
 
-**$scheduler**: поле для экспериментов.
+**$scheduler** — планировщик кривой *learning_rate*:
+
+- [constant](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Constant-Schedule): скорость обучения не изменяется во времени с начала и до конца обучения. Единственный планировщик, который не использует переменную *lr_warmup_ratio*. ==Планировщик по умолчанию==.
+
+Все остальные планировщики используют переменную *lr_warmup_ratio* и имеют следующие формулировки:
+После периода разогрева, длящегося *lr_warmup_ratio%* шагов, в течение которого скорость обучения линейно увеличивается между 0 и *learning_rate*:
+- [linear](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Linear-Schedule-with-Warmup): скорость обучения линейно уменьшается от значения *learning_rate* до 0.
+- [cosine](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Cosine-with-Warmup): скорость обучения уменьшается вслед за значением косинусной функции между *learning_rate* и 0.
+- [cosine_with_restarts](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Cosine-With-Hard-Restarts): скорость обучения уменьшается вслед за значением косинусной функции между *learning_rate* и 0, с несколькими жёсткими перезапусками.
+- [polynomial](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Polynomial-Decay-with-Warmup): скорость обучения уменьшается как полиномиальный распад со значения *learning_rate* до значения 1e-7.
+	- [constant_with_warmup](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Constant-Schedule-with-Warmup): ведёт себя как **constant**.
 ![](https://files.catbox.moe/pp1zdz.png)
 -> learning_rate = 1e-4, unet_lr = learning_rate, text_encoder_lr = learning_rate, scheduler = **X** <-
 
+**$lr_warmup_ratio**: процент шагов начиная с первого, в течении которых скорость обучения линейно увеличивается от 0 до значения *learning_rate*. Малые значения или 0 позволяют захватить большое количество информации в начале тренировки и перейти к более тонкой "достройке" к концу. Значения больше могут помочь с проблемой, когда сеть очень быстро перенасыщается в начале обучения. Здесь нужно эксперементировать, датасет играет очень важную роль.
+Данный параметр не актуален для *constant* планировщика.
+
 **$network_dim**: значения могут быть разные (видел кто-то тренировал на 1024), но было установлено, что выше 128/256 особого смысла лезть нет. Чем больше значение, тем больше расход видеопамяти.
+
 **$save_precision, $mixed_precision**: как было сказано ранее, bf16 > fp16, поэтому если позволяет железо – ставьте.
+
+**$keep_tokens**: если включена опция перемешивания текстовых описаний, данная переменная позволяет защитить первые *keep_tokens* токенов от перемешивания.
+
+!!! note Совет
+	Откройте [список всех уникальных однотокеновых слов до 4 символов](https://github.com/2kpr/dreambooth-tokens/blob/main/all_single_tokens_to_4_characters.txt), выберите любой из них (для персонажа *Tomoe Koga* я нашел удачный токен *tk*, например), удалите из всех описаний полное имя персонажа, вставьте во все описания самым первом тегом токен, который вы выбрали. Установите *shuffle_captions = 1*, *keep_tokens = 1*. Вы великолепны.
 
 6. Запуск скрипта
 !!! note Если не открывается по двойному щелчку
@@ -317,6 +343,9 @@ A: Установите [PowerShell 6](https://github.com/PowerShell/PowerShell/
 
 Q: Сыпятся красные ошибки в консоли при выполнении скрипта!
 A: Обновите [PowerShell](https://github.com/PowerShell/PowerShell/releases).
+
+Q: Установил всё по гайду, но все равно не находит модули! Мне что, каждую зависимость устанавливать вручную?
+A: Нет, процесс подготовки был отредактирован, а конкретно убран флаг *--system-site-packages*. Этот флаг отвечал за учёт системных библиотек, установленных по стандартному системному пути, и это нередко приводило к конфликтам (в т.ч. у автора). Удалите папку *venv* из *\sd-scripts* и пройдитесь по командам заново.
 
 #### sd_dreambooth_extension
 

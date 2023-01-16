@@ -297,13 +297,12 @@ A: Install [PowerShell 6](https://github.com/PowerShell/PowerShell/releases/tag/
 Q: I get red console errors when I run a script!
 A: Update [PowerShell](https://github.com/PowerShell/PowerShell/releases).
 
-## Решение проблем с дополнением
+## Troubleshooting (extension)
 
 !!! note New and old versions
     Strictly speaking, the new version *might* work fine. But on 15.01.2023 the author of the guide could not train anything on it, except garbage (on two different PCs), while the old version works fine.
 	Settings in the new version are about the same – you can try it.
 	
-Q: На превью вместо [нормальных изображений](http://c2n.me/4hzOvG8.png) генерируется [мусор.](http://c2n.me/4hzOx6o.png)
 Q: The preview generates [garbage](http://c2n.me/4hzOx6o.png) instead of [normal images](http://c2n.me/4hzOvG8.png)
 A: Make sure you roll back to the old version according to the guide. If that doesn't work, you probably have too fresh xformers, torch or torchvision. Create a separate webui directory for dreambooth (you can with the newest version of webui) and let it install the old version. It should work fine.
 

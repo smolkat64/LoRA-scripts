@@ -35,8 +35,8 @@ $clip_skip = 1 # https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Fe
 
 # Advanced variables
 $learning_rate = 1e-4 # Learning rate
-$unet_lr = $learning_rate # U-Net learning rate
-$text_encoder_lr = $learning_rate # Text encoder learning rate
+$unet_lr = $learning_rate # U-Net learning rate. By default equals the learning rate
+$text_encoder_lr = $learning_rate # Text encoder learning rate. By default equals the learning rate
 $scheduler = "cosine_with_restarts" # Scheduler to use for learning rate. Possible values: linear, cosine, cosine_with_restarts, polynomial, constant (default), constant_with_warmup
 $lr_warmup_ratio = 0.0 # Ratio of warmup steps in the learning rate scheduler to total training steps (0 to 1)
 $network_dim = 128 # Size of network. Higher number = higher accuracy, output file size and VRAM usage

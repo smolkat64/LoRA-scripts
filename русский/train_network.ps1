@@ -35,8 +35,8 @@ $clip_skip = 1 # https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Fe
 
 # Дополнительные переменные
 $learning_rate = 1e-4 # Скорость обучения
-$unet_lr = $learning_rate # Скорость обучения U-Net
-$text_encoder_lr = $learning_rate # Скорость обучения текстового энкодера
+$unet_lr = $learning_rate # Скорость обучения U-Net. По умолчанию равен скорости обучения
+$text_encoder_lr = $learning_rate # Скорость обучения текстового энкодера. По умолчанию равен скорости обучения
 $scheduler = "cosine_with_restarts" # Планировщик скорости обучения. Возможные значения: linear, cosine, cosine_with_restarts, polynomial, constant (по умолчанию), constant_with_warmup
 $lr_warmup_ratio = 0.0 # Отношение количества шагов разогрева планировщика к количеству шагов обучения (от 0 до 1)
 $network_dim = 128 # Размер нетворка. Чем больше значение, тем больше точность и размер выходного файла

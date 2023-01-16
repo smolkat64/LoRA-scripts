@@ -1,4 +1,4 @@
-﻿### Changelog
+### Changelog
 
 ### v1.04
 ### 16.01.2023

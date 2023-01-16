@@ -114,7 +114,7 @@ if ((git --help) -and (curl --help) -and $internet_available -eq 1 -and -not $Te
 			$restart = 1
 			Set-Location -Path $script_origin
 			curl --silent $script_url --output "$PSCommandPath"
-			WCO black green 0 "Обновлено до версии $new_version!)"
+			WCO black green 0 "Обновлено до версии v$new_version!"
 			Write-Output "Перезапуск..."
 			sleep 2 }
 	}

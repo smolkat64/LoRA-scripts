@@ -96,6 +96,7 @@ Write-Output "If something not werks or werks not correctly, leave a message her
 WCO black blue 0 "https://github.com/anon-1337/LoRA-scripts/issues"
 Write-Output " "
 
+### It works - don't fucking touch it!
 $internet_available = 0
 $script_origin = (get-location).path
 Get-NetConnectionProfile | foreach { if ($_.IPv4Connectivity -eq "Internet") { $internet_available = 1 } }
@@ -118,6 +119,7 @@ if ((git --help) -and (curl --help) -and $internet_available -eq 1 -and -not $Te
 			sleep 2 }
 	}
 }
+###
 
 if ($restart -ne 1) {
 

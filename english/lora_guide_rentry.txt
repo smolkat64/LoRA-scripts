@@ -1,6 +1,6 @@
 # LoRA guide
 -> by anons <-
--> last update: 16.01.2023 <-
+-> last update: 17.01.2023 UTC+3 <-
 -> [**Русская версия**](https://rentry.org/2chAI_LoRA_Dreambooth_guide)<-
 ***
 ## Table of contents
@@ -86,7 +86,12 @@ Where **n** – number of *repeats* of the given concept; **conceptA**, **concep
 The *regularization_images* folder can be empty, the presence of regularization images is optional.
 [**Regularization images**](https://github.com/d8ahazard/sd_dreambooth_extension/wiki/Basics#dreambooth) help improve training accuracy.
 The regularization images allow you to "separate" the object being trained (**concept**) from the style of the image. During training, the network will be trained "in parallel" (actually sequentially, in the presence of regularizing images in a wise scenario the training time should be doubled) as not to look like **concept**. The transferability between models of such a LoRA network will become better.
-!!! note Expect examples of the differences between models with and without reg. images
+The following is an example of a comparison of networks trained on datasets without and with reg. images. The same [settings](https://pastebin.com/BLPs1BH2), the same training speed and seed. Both networks were trained for 30 minutes at 1.91s/it, the REG network was additionally trained on reg. images for 30 minutes. [Dataset](https://drive.google.com/drive/folders/1SZyqTssCq1TCk7ZMaag0CJUnLxdFkx3W?usp=share_link).
+Note the *variety* of regularized images. The images in the irregularized network look like bad copies of each other, despite the different sig:
+
+-> ![](https://i.imgur.com/M014bvx.jpg) <-
+-> ![](https://i.imgur.com/GpzLriQ.jpg) <-
+
 !!! info How to work with them
 	For example, if you are training a person's face (a man) and every description file has the words *photo of a PersonName* in it, it's a good idea to open the WebUI and generate images with the prompt *photo of a man*. How many? At least as many as the number of images of the man's face in the example. More is better.
 	Stock up on folders with 200 images *1boy, 1girl, photo of a man, photo of a woman* and you'll be happy.
@@ -116,15 +121,17 @@ The presence of underscores in the tags does not matter, but since they consume 
 	This script is for PowerShell, but that does not mean that it is only available to users of the latest versions of Windows. Not everyone knows this, but [PowerShell is available for all versions of Windows starting with XP, on Linux, and on macOS](https://github.com/PowerShell/PowerShell/releases).
 3. Open PowerShell and execute the following commands one by one:
 ```powershell
-cd <path to sd-scripts>
+Set-Location <path to sd-scripts>
 
-python -m venv --system-site-packages venv
-.\venv\Scripts\activate
+python -m venv venv      # Create a virtual environment
+.\venv\Scripts\activate  # Activate it
 
+# Install torch and torchvision, xformers, and the necessary dependencies
 pip install torch==1.12.1+cu116 torchvision==0.13.1+cu116 --extra-index-url https://download.pytorch.org/whl/cu116
 pip install --upgrade -r requirements.txt
 pip install -U -I --no-deps https://github.com/C43H66N12O12S2/stable-diffusion-webui/releases/download/f/xformers-0.0.14.dev0-cp310-cp310-win_amd64.whl
 
+# Copy the compiled Windows CUDA libraries. On Linux this step is not necessary
 cp .\bitsandbytes_windows\*.dll .\venv\Lib\site-packages\bitsandbytes\
 cp .\bitsandbytes_windows\cextension.py .\venv\Lib\site-packages\bitsandbytes\cextension.py
 cp .\bitsandbytes_windows\main.py .\venv\Lib\site-packages\bitsandbytes\cuda_setup\main.py
@@ -162,7 +169,7 @@ $clip_skip = 1
 ```
 
 **$train_batch_size**: if you increase this value, it probably also requires [increasing *$learning_rate*](https://github.com/cloneofsimo/lora/discussions/53#discussioncomment-4437440).
-**$num_epochs**: there is no definite answer to the question of how much to set, the dataset and other settings play an equally important role. More epochs means more time to train, but a large value will not necessarily make the network better. At a certain point in training, accuracy will almost stop increasing, so putting an insanely high value makes no sense. You can start with 5. I recommend leaving the settings as they are the first time and testing all 10 epochs on the same seed to see how many are needed.
+**$num_epochs**: This variable is used to calculate the number of training steps. The more epochs, the longer it takes to train the network. As for the result on large and small values, see the description of the *$learning_rate* variable. There is no universal answer to how much to set.
 **$max_token_length**: open your largest description file, copy its contents and put it into the WebUI Promt. The counter on the right will display the length of the token. If less than 75, put 75. If more than 75 – put 150. If greater than 150, then put 225. Values greater than 225 are not supported by the script (yet).
 **$clip_skip**: 1 for SD-based checkpoints, 2 for NAI-based checkpoints.
 
@@ -177,25 +184,47 @@ $network_dim = 128
 ```
 
 **$learning_rate**: 1e-4 is recommended for checkpoints based on SD 1.x. For 2.x - it is unclear, someone says that [got terrible results with these settings](https://github.com/d8ahazard/sd_dreambooth_extension/issues/486#issuecomment-1345884109). But I got decent faces at the recommended settings as well.
-What is the difference between high and low speed? There is even a separate [website](https://losslandscape.com/explorer) which clearly shows this: at too low speed the learning gets stuck and the network learns nothing, at too high speed unpredictable but unlikely good things happen.
+
+What is the difference between high and low speed? 
+- the low rate and low number of steps will cause the network to be underfit. The network will have problems reproducing the concept.
+- high speed and quantity lead to an overfit network. You won't be able to generate anything but a concept, regardless of the promt you use.
+
+There is a [website](https://losslandscape.com/explorer) with a clear demonstration.
 The following are grids comparing different *learning_rate*. All networks were trained on the same [dataset](https://drive.google.com/drive/folders/1JjIV61fMUyJKYOxZpYokx7cd81awtBWc) ([pixiv of the author](https://www.pixiv.net/en/users/32808113)), all images were generated on the same seed with different prompt. Note how the networks at different settings learned the following tags: *harusameriburo* (artist style), *jacket*, *cloudy sky*, *shoes*, *ligne claire*, *backpack*, *blush stickers*.
 ![](https://files.catbox.moe/dh3c0w.png)
 -> learning_rate = **X**, unet_lr = learning_rate, text_encoder_lr = learning_rate, scheduler = linear <-
 
-**$unet_lr**: U-Net learning rate. [Field for experimentation](https://github.com/cloneofsimo/lora/discussions/69).
+**$unet_lr**: U-Net learning rate. U-Net is responsible for converting noise into an image. [Field for experimentation](https://github.com/cloneofsimo/lora/discussions/69).
 ![](https://files.catbox.moe/wmue60.png)
 -> learning_rate = 1e-4, unet_lr = **X**, text_encoder_lr = learning_rate, scheduler = linear <-
 
-**$text_encoder_lr**: Some people advise to halve the learning rate of the text encoder relative to the learning_rate (i.e. to a value of 5e-5), saying that this gives better results. Field for experimentation.
+**$text_encoder_lr**: the learning rate of the CLIP text encoder. Thanks to the text encoder the image corresponds to the text description. There is an opinion that it is worth halving the learning rate of the text encoder relative to *learning_rate* (i.e. to a value of 5e-5) to improve the final result. There is also information that teaching the text encoder is [beneficial to faces](https://huggingface.co/blog/dreambooth#fine-tuning-the-text-encoder). Field for experimentation.
 ![](https://files.catbox.moe/py6lq3.png)
 -> learning_rate = 1e-4, unet_lr = learning_rate, text_encoder_lr = **X**, scheduler = linear <-
 
-**$scheduler**: field for experimentation.
+**$scheduler** is the *learning_rate* curve scheduler:
+- [constant](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Constant-Schedule): learning rate does not change in time from the beginning to the end of learning. The only scheduler that does not use the variable *lr_warmup_ratio*. ==Default scheduler==.
+All other schedulers use the variable *lr_warmup_ratio* and have the following wording:
+After a warmup period lasting *lr_warmup_ratio%* steps, during which the learning rate increases linearly between 0 and *learning_rate*:
+- [linear](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Linear-Schedule-with-Warmup): the learning rate decreases linearly from the *learning_rate* value to 0.
+- [cosine](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Cosine-with-Warmup): the learning rate decreases following the value of the cosine function between *learning_rate* and 0.
+- [cosine_with_restarts](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Cosine-With-Hard-Restarts): the learning rate decreases following the value of the cosine function between *learning_rate* and 0, with a few hard restarts.
+- [polynomial](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Polynomial-Decay-with-Warmup): the learning rate decreases as a polynomial decay from the *learning_rate* value to a value of 1e-7.
+- [constant_with_warmup](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Constant-Schedule-with-Warmup): behaves like **constant**.
+
 ![](https://files.catbox.moe/pp1zdz.png)
 -> learning_rate = 1e-4, unet_lr = learning_rate, text_encoder_lr = learning_rate, scheduler = **X** <-
 
+**$lr_warmup_ratio**: the percentage of steps starting from the first, during which the learning rate increases linearly from 0 to the *learning_rate* value. Small values or 0 allow you to capture a lot of information at the beginning of training and move on to finer "refinement" by the end. Values larger can help with the problem when the network becomes saturated very quickly at the beginning of training. Here you need to experiment, dataset plays a very important role.
+This parameter is not applicable for *constant* scheduler.
+
 **$network_dim**: values can be different (I saw someone training at 1024), but it was found that values above 128/256 do not make a big difference. The higher the value, the higher the video memory consumption and output file size.
+
 **$save_precision, $mixed_precision**: As said before, bf16 > fp16, so if your hardware allows it, go for it.
+
+**$keep_tokens**: if the option to shuffle text descriptions is enabled, this variable allows to protect the first *keep_tokens* tokens from shuffling.
+!!! note Advice
+	Open [list of all unique single-token words up to 4 characters](https://github.com/2kpr/dreambooth-tokens/blob/main/all_single_tokens_to_4_characters.txt), select any of them (for the character *Tomoe Koga* I found a successful token *tk*, for example), remove the full character name from all descriptions, insert in all descriptions the very first tag token you chose. Set *shuffle_captions = 1*, *keep_tokens = 1*. You are awesome.
 
 6. Running the script
 !!! note If it does not launch by double-clicking
@@ -308,6 +337,9 @@ A: Install [PowerShell 6](https://github.com/PowerShell/PowerShell/releases/tag/
 
 Q: I get red console errors when I run a script!
 A: Update [PowerShell](https://github.com/PowerShell/PowerShell/releases).
+
+Q: I installed everything according to the guide, but it still does not find the modules! Do I have to install every dependency manually?
+A: No, the preparation process was edited and specifically the *--system-site-packages* flag was removed. This flag was responsible for accounting for system libraries installed on the standard system path, and it often caused conflicts. Delete the *venv* folder from *\sd-scripts* and go through the commands again.
 
 #### sd_dreambooth_extension
 

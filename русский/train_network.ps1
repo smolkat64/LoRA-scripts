@@ -1,4 +1,4 @@
-﻿# LoRA retard-friendly train_network script v1.03 by anon
+﻿# LoRA retard-friendly train_network script v1.04 by anon
 # Последнее обновление: 16.01.23 06:28 по МСК
 # https://github.com/cloneofsimo/lora
 # https://github.com/kohya-ss/sd-scripts
@@ -37,7 +37,7 @@ $clip_skip = 1 # https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Fe
 $learning_rate = 1e-4 # Скорость обучения
 $unet_lr = $learning_rate # Скорость обучения U-Net. По умолчанию равен скорости обучения
 $text_encoder_lr = $learning_rate # Скорость обучения текстового энкодера. По умолчанию равен скорости обучения
-$scheduler = "cosine_with_restarts" # Планировщик скорости обучения. Возможные значения: linear, cosine, cosine_with_restarts, polynomial, constant (по умолчанию), constant_with_warmup
+$scheduler = "constant" # Планировщик скорости обучения. Возможные значения: linear, cosine, cosine_with_restarts, polynomial, constant (по умолчанию), constant_with_warmup
 $lr_warmup_ratio = 0.0 # Отношение количества шагов разогрева планировщика к количеству шагов обучения (от 0 до 1)
 $network_dim = 128 # Размер нетворка. Чем больше значение, тем больше точность и размер выходного файла
 $save_precision = "fp16" # Использовать ли пользовательскую точность сохранения, и её тип. Возможные значения: no, float, fp16, bf16
@@ -83,7 +83,24 @@ function WCO($BackgroundColor, $ForegroundColor, $NewLine) {
 	$host.UI.RawUI.ForegroundColor = $fc
 }
 
-$current_version = "1.03"
+$current_version = "1.04"
+
+[console]::OutputEncoding = [text.encoding]::UTF8
+
+function Get-Changelog {
+	$changelog = curl -s "https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9/script_changelog.txt"
+	$max_version = "0.0"
+	$last_version_string_index = 0; $index = 0
+	foreach ($line in $changelog) {
+		if ($line -match "`#+ v\d+[\.,]\d+") { $max_version = [float]($line -replace "^#+ +v"); $last_version_string_index = $index }
+		$index += 1
+	}
+	$max_version_date = $changelog[$last_version_string_index + 1] -replace "#+ +"
+	if ($max_version -gt $current_version) {
+		Write-Output "Изменения в v${max_version} от ${max_version_date}:"
+		while (($last_version_string_index + 3) -le $changelog.Length) { Write-Output "$($changelog[$last_version_string_index + 2])"; $last_version_string_index += 1 }
+	}
+}
 
 # Аутизм №1
 if ($dont_draw_flags -le 0) {
@@ -109,6 +126,7 @@ if ((git --help) -and (curl --help) -and $internet_available -eq 1 -and -not $Te
 	if ([float]$current_version -lt $new_version -and (Is-Numeric $new_version)) { 
 		Write-Output "Доступно обновление скрипта (v$current_version => v$new_version) по адресу:"
 		WCO black blue 0 $script_url
+		Get-Changelog
 		do { $do_update = Read-Host "Выполнить обновление? (y/N)" }
 		until ($do_update -eq "y" -or $do_update -ceq "N")
 		if ($do_update -eq "y") {
@@ -215,14 +233,14 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 				until ($reg_img_compensate_time -eq "y" -or $reg_img_compensate_time -ceq "N") }
 				if ($reg_img_compensate_time -eq "y" -or $do_not_interrupt -ge 1) {
 					$max_train_steps = [int]([math]::Round($max_train_steps / 2))
-					Write-Output "Количество шагов: $([math]::Round($($speed_value * 60), 2)) it/min * $desired_training_time минут(-а) ≈ $max_train_steps шаг(-ов)" }
+					WCO black gray 1 "Количество шагов: $([math]::Round($($speed_value * 60), 2)) it/min * $desired_training_time минут(-а) ≈ "; WCO white black 1 "$max_train_steps`n" }
 				else {
 					Write-Output "Вы выбрали нет. Увеличенное время компенсировано не будет, длительность тренировки увеличена вдвое"
-					Write-Output "Количество шагов: $([math]::Round($($speed_value * 60), 2)) it/min * $desired_training_time минут(-а) * 2 ≈ $max_train_steps шаг(-ов)" }
+					WCO black gray 1 "Количество шагов: $([math]::Round($($speed_value * 60), 2)) it/min * $desired_training_time минут(-а) * 2 ≈ "; WCO white black 1 "$max_train_steps`n" }
 			}
 			else {
 				$max_train_steps = [int]([math]::Round($max_train_steps))
-				Write-Output "Количество шагов: $([math]::Round($($speed_value * 60), 2)) it/min * $desired_training_time минут(-а) ≈ $max_train_steps training шаг(-ов)" }
+				WCO black gray 1 "Количество шагов: $([math]::Round($($speed_value * 60), 2)) it/min * $desired_training_time минут(-а) ≈ "; WCO white black 1 "$max_train_steps`n" }
 		}
 		else {
 			WCO black red 0 "Неверно указана скорость обучения gpu_training_speed!"
@@ -239,7 +257,7 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 			Write-Output "Количество регуляризационных изображений больше 0: количество шагов будет увеличено вдвое"
 		}
 		$max_train_steps = [int]($total / $train_batch_size * $num_epochs)
-		Write-Output "Количество шагов: $total / $train_batch_size * $num_epochs = $max_train_steps"
+		WCO black gray 1 "Количество шагов: $total / $train_batch_size * $num_epochs = "; WCO white black 1 "$max_train_steps`n"
 	}
 	
 	if ($is_random_seed -le 0) { $seed = 1337 }
@@ -342,4 +360,5 @@ sleep 3
 
 if ($restart -eq 1) { powershell -File $PSCommandPath }
 
-#ver=1.03
+#16.01.23
+#ver=1.04

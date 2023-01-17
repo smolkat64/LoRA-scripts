@@ -1,4 +1,4 @@
-﻿# LoRA retard-friendly train_network script v1.03 by anon
+﻿# LoRA retard-friendly train_network script v1.031 by anon
 # Последнее обновление: 16.01.23 06:28 UTC+3
 # https://github.com/cloneofsimo/lora
 # https://github.com/kohya-ss/sd-scripts
@@ -37,7 +37,7 @@ $clip_skip = 1 # https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Fe
 $learning_rate = 1e-4 # Learning rate
 $unet_lr = $learning_rate # U-Net learning rate. By default equals the learning rate
 $text_encoder_lr = $learning_rate # Text encoder learning rate. By default equals the learning rate
-$scheduler = "cosine_with_restarts" # Scheduler to use for learning rate. Possible values: linear, cosine, cosine_with_restarts, polynomial, constant (default), constant_with_warmup
+$scheduler = "constant" # Scheduler to use for learning rate. Possible values: linear, cosine, cosine_with_restarts, polynomial, constant (default), constant_with_warmup
 $lr_warmup_ratio = 0.0 # Ratio of warmup steps in the learning rate scheduler to total training steps (0 to 1)
 $network_dim = 128 # Size of network. Higher number = higher accuracy, output file size and VRAM usage
 $save_precision = "fp16" # Whether to use custom precision for saving, and its type. Possible values: no, float, fp16, bf16
@@ -82,7 +82,7 @@ function WCO($BackgroundColor, $ForegroundColor, $NewLine) {
 	$host.UI.RawUI.ForegroundColor = $fc
 }
 
-$current_version = "1.03"
+$current_version = "1.031"
 
 # Autism case #1
 if ($dont_draw_flags -le 0) {
@@ -246,7 +246,11 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 	$output_dir = $output_dir.TrimEnd("\", "/")
 	$logging_dir = $logging_dir.TrimEnd("\", "/")
 	
-	$run_parameters = "--network_module=networks.lora --pretrained_model_name_or_path=`"$ckpt`" --train_data_dir=`"$image_dir`" --output_dir=`"$output_dir`" --output_name=`"$output_name`" --caption_extension=`".txt`" --resolution=$resolution --prior_loss_weight=1 --enable_bucket --min_bucket_reso=256 --max_bucket_reso=1024 --train_batch_size=$train_batch_size --lr_warmup_steps=$lr_warmup_steps --learning_rate=$learning_rate --unet_lr=$unet_lr --text_encoder_lr=$text_encoder_lr --max_train_steps=$([int]$max_train_steps) --use_8bit_adam --xformers --save_every_n_epochs=$save_every_n_epochs --save_last_n_epochs=$save_last_n_epochs --save_model_as=safetensors --keep_tokens=$keep_tokens --clip_skip=$clip_skip --seed=$seed --network_dim=$network_dim --cache_latents --lr_scheduler=$scheduler"
+	$run_parameters = "--network_module=networks.lora --pretrained_model_name_or_path=`"$ckpt`" --train_data_dir=`"$image_dir`" --output_dir=`"$output_dir`" --output_name=`"$output_name`" --caption_extension=`".txt`" --resolution=$resolution --prior_loss_weight=1 --enable_bucket --min_bucket_reso=256 --max_bucket_reso=1024 --train_batch_size=$train_batch_size --lr_warmup_steps=$lr_warmup_steps --learning_rate=$learning_rate --max_train_steps=$([int]$max_train_steps) --use_8bit_adam --xformers --save_every_n_epochs=$save_every_n_epochs --save_last_n_epochs=$save_last_n_epochs --save_model_as=safetensors --keep_tokens=$keep_tokens --clip_skip=$clip_skip --seed=$seed --network_dim=$network_dim --cache_latents --lr_scheduler=$scheduler"
+	
+	if ($unet_lr -ne $learning_rate) { $run_parameters += " --unet_lr=$unet_lr" }
+	
+	if ($text_encoder_lr -ne $learning_rate) { $run_parameters += " --text_encoder_lr=$text_encoder_lr" }
 	
 	if ($reg_dir -ne "") { $run_parameters += " --reg_data_dir=`"$reg_dir`"" }
 	
@@ -335,4 +339,4 @@ sleep 3
 if ($restart -eq 1) { powershell -File $PSCommandPath }
 
 
-#ver=1.03
+#ver=1.031

@@ -1,4 +1,4 @@
-﻿# LoRA retard-friendly train_network script v1.05 by anon
+﻿# LoRA retard-friendly train_network script v1.051 by anon
 # Последнее обновление: 16.01.23 06:28 по МСК
 # https://github.com/cloneofsimo/lora
 # https://github.com/kohya-ss/sd-scripts
@@ -85,12 +85,12 @@ function WCO($BackgroundColor, $ForegroundColor, $NewLine) {
 	$host.UI.RawUI.ForegroundColor = $fc
 }
 
-$current_version = "1.05"
+$current_version = "1.051"
 
 [console]::OutputEncoding = [text.encoding]::UTF8
 
 function Get-Changelog {
-	$changelog = Invoke-RestMethod -Uri "https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9/script_changelog.txt"
+	$changelog = curl -s"https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9/script_changelog.txt"
 	$max_version = "0.0"
 	$last_version_string_index = 0; $index = 0
 	foreach ($line in $changelog) {
@@ -121,9 +121,9 @@ $internet_available = 0
 $script_origin = (get-location).path
 Get-NetConnectionProfile | foreach { if ($_.IPv4Connectivity -eq "Internet") { $internet_available = 1 } }
 sleep 3
-if ((git --help) -and $internet_available -eq 1 -and $TestRun -le 0 -and $ChainedRun -eq 0) {
+if ($internet_available -eq 1 -and $TestRun -le 0 -and $ChainedRun -eq 0) {
 	$script_url = "https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9/train_network.ps1"
-	$script_github = Invoke-RestMethod -Uri $script_url
+	$script_github = curl -s $script_url
 	$new_version = [float]$($script_github[$script_github.Length - 1] -replace "#[a-zA-Z=]+")
 	if ([float]$current_version -lt $new_version -and (Is-Numeric $new_version)) { 
 		Write-Output "Доступно обновление скрипта (v$current_version => v$new_version) по адресу:"
@@ -134,7 +134,7 @@ if ((git --help) -and $internet_available -eq 1 -and $TestRun -le 0 -and $Chaine
 		if ($do_update -eq "y") {
 			$restart = 1
 			Set-Location -Path $script_origin
-			Invoke-RestMethod -Uri $script_url -OutFile "$PSCommandPath"
+			curl -s $script_url -o "$PSCommandPath"
 			WCO black green 0 "Обновлено до версии v$new_version!"
 			Write-Output "Перезапуск..."
 			sleep 2 }
@@ -160,7 +160,7 @@ $iter = 0
 Write-Output "Проверка путей"
 $all_paths = @( $sd_scripts_dir, $ckpt, $image_dir, $reg_dir, $vae_path )
 foreach ($path in $all_paths) {
-	if (!(Test-Path $path)) {
+	if (!(Test-Path $path) -and $path -ne "") {
 		$is_structure_wrong = 1
 		Write-Output "Путь $path не существует" } }
 
@@ -380,4 +380,4 @@ sleep 3
 if ($restart -eq 1) { powershell -File $PSCommandPath }
 
 #17.01.23
-#ver=1.05
+#ver=1.051

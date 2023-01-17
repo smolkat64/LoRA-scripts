@@ -160,7 +160,7 @@ $iter = 0
 Write-Output "Проверка путей"
 $all_paths = @( $sd_scripts_dir, $ckpt, $image_dir, $reg_dir, $vae_path )
 foreach ($path in $all_paths) {
-	if (!(Test-Path $path) -and $path -ne "") {
+	if ($path -ne "" -and !(Test-Path $path)) {
 		$is_structure_wrong = 1
 		Write-Output "Путь $path не существует" } }
 

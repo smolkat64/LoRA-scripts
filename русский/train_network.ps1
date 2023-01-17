@@ -1,4 +1,4 @@
-﻿# LoRA retard-friendly train_network script v1.04 by anon
+﻿# LoRA retard-friendly train_network script v1.05 by anon
 # Последнее обновление: 16.01.23 06:28 по МСК
 # https://github.com/cloneofsimo/lora
 # https://github.com/kohya-ss/sd-scripts
@@ -21,13 +21,14 @@ $use_vae = 0 # Использовать ли VAE для загружаемого
 $vae_path = "X:\SD-models\checkpoint.vae.pt" # Путь к VAE
 
 # Время тренировки (опционально)
-$desired_training_time = 0 # Если значение выше 0, игнорировать количество изображений с повторениями при вычислении количества шагов и обучать сеть в течении N минут.
+$desired_training_time = 0 # Если значение выше 0, игнорировать количество изображений с повторениями при вычислении количества шагов и обучать сеть в течении N минут
 $gpu_training_speed = "1.23it/s | 1.23s/it" # Средняя скорость тренировки, учитывая мощность GPU. Значение вида XX.XXit/s или XX.XXs/it
 
 # Основные переменные
+$max_train_epochs = 10 # Число эпох. Не имеет силы при $desired_training_time > 0
+$max_train_steps = 0 # (опционально) Выставьте своё количество шагов обучения. desired_training_time и max_train_epochs должны быть равны нулю чтобы эта переменная имела силу
 $train_batch_size = 1 # Количество изображений, на которых идёт обучение, одновременно. Чем больше значение, тем меньше шагов обучения (обучение проходит быстрее), но больше потребление видеопамяти
 $resolution = 512 # Разрешение обучения (пиксели)
-$num_epochs = 10 # Число эпох. Не имеет силы при $desired_training_time > 0
 $save_every_n_epochs = 1 # Сохранять чекпоинт каждые N эпох
 $save_last_n_epochs = 999 # Сохранить только последние N эпох
 $max_token_length = 75 # Максимальная длина токена. Возможные значения: 75 / 150 / 225
@@ -38,14 +39,15 @@ $learning_rate = 1e-4 # Скорость обучения
 $unet_lr = $learning_rate # Скорость обучения U-Net. По умолчанию равен скорости обучения
 $text_encoder_lr = $learning_rate # Скорость обучения текстового энкодера. По умолчанию равен скорости обучения
 $scheduler = "constant" # Планировщик скорости обучения. Возможные значения: linear, cosine, cosine_with_restarts, polynomial, constant (по умолчанию), constant_with_warmup
-$lr_warmup_ratio = 0.0 # Отношение количества шагов разогрева планировщика к количеству шагов обучения (от 0 до 1)
+$lr_warmup_ratio = 0.0 # Отношение количества шагов разогрева планировщика к количеству шагов обучения (от 0 до 1). Не имеет силы при планировщике constant
 $network_dim = 128 # Размер нетворка. Чем больше значение, тем больше точность и размер выходного файла
+$max_data_loader_n_workers = 8 # Максимальное количество потоков для DataLoader. Чем меньше значение, тем меньше потребление RAM, быстрее старт эпохи и медленнее загрузка данных
 $save_precision = "fp16" # Использовать ли пользовательскую точность сохранения, и её тип. Возможные значения: no, float, fp16, bf16
 $mixed_precision = "fp16" # Использовать ли смешанную точность для обучения, и её тип. Возможные значения: no, fp16, bf16
 $is_random_seed = 1 # Сид обучения. 1 = рандомный сид, 0 = статичный
 $shuffle_caption = 1 # Перетасовывать ли теги в файлах описания, разделённых запятой
 $keep_tokens = 0 # Не перетасовывать первые N токенов при перемешивании описаний
-$do_not_interrupt = 0 # Не прерывать работу скрипта вопросами. По умолчанию включен если выполняется цепочка скриптов.
+$do_not_interrupt = 0 # Не прерывать работу скрипта вопросами. По умолчанию включен если выполняется цепочка скриптов
 
 # Последовательный запуск скриптов
 # Здесь указываются пути, в которых находятся скрипты для последовательного выполнения
@@ -83,12 +85,12 @@ function WCO($BackgroundColor, $ForegroundColor, $NewLine) {
 	$host.UI.RawUI.ForegroundColor = $fc
 }
 
-$current_version = "1.04"
+$current_version = "1.05"
 
 [console]::OutputEncoding = [text.encoding]::UTF8
 
 function Get-Changelog {
-	$changelog = curl -s "https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9/script_changelog.txt"
+	$changelog = Invoke-RestMethod -Uri "https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9/script_changelog.txt"
 	$max_version = "0.0"
 	$last_version_string_index = 0; $index = 0
 	foreach ($line in $changelog) {
@@ -119,9 +121,9 @@ $internet_available = 0
 $script_origin = (get-location).path
 Get-NetConnectionProfile | foreach { if ($_.IPv4Connectivity -eq "Internet") { $internet_available = 1 } }
 sleep 3
-if ((git --help) -and (curl --help) -and $internet_available -eq 1 -and -not $TestRun -ge 1 -and $ChainedRun -eq 0) {
+if ((git --help) -and -and $internet_available -eq 1 -and $TestRun -le 0 -and $ChainedRun -eq 0) {
 	$script_url = "https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9/train_network.ps1"
-	$script_github = curl --silent $script_url
+	$script_github = Invoke-RestMethod -Uri $script_url
 	$new_version = [float]$($script_github[$script_github.Length - 1] -replace "#[a-zA-Z=]+")
 	if ([float]$current_version -lt $new_version -and (Is-Numeric $new_version)) { 
 		Write-Output "Доступно обновление скрипта (v$current_version => v$new_version) по адресу:"
@@ -132,7 +134,7 @@ if ((git --help) -and (curl --help) -and $internet_available -eq 1 -and -not $Te
 		if ($do_update -eq "y") {
 			$restart = 1
 			Set-Location -Path $script_origin
-			curl --silent $script_url --output "$PSCommandPath"
+			Invoke-RestMethod -Uri $script_url -OutFile "$PSCommandPath"
 			WCO black green 0 "Обновлено до версии v$new_version!"
 			Write-Output "Перезапуск..."
 			sleep 2 }
@@ -150,15 +152,22 @@ function Word-Ending($value) {
 	if ($ending -ge "2" -and $ending -le "4") { return "я" }
 	if (($ending -ge "5" -and $ending -le "9") -or $ending -eq "0") { return "й" } }
 
-Write-Output "Подсчет количества изображений в папках"
 $total = 0
 $is_structure_wrong = 0
 $abort_script = 0
 $iter = 0
 
+Write-Output "Проверка путей"
+$all_paths = @( $sd_scripts_dir, $ckpt, $image_dir, $reg_dir, $vae_path )
+foreach ($path in $all_paths) {
+	if (!(Test-Path $path)) {
+		$is_structure_wrong = 1
+		Write-Output "Путь $path не существует" } }
+
 if ($is_chained_run -ge 1) { $do_not_interrupt = 1 }
 
-Get-ChildItem -Path $image_dir -Directory | ForEach-Object {
+if ($is_structure_wrong -eq 0) { Get-ChildItem -Path $image_dir -Directory | ForEach-Object {
+	if ($iter -eq 0) { Write-Output "Подсчет количества изображений в папках" }
     $parts = $_.Name.Split("_")
     if (!(Is-Numeric $parts[0]))
     {
@@ -179,7 +188,7 @@ Get-ChildItem -Path $image_dir -Directory | ForEach-Object {
     Write-Output "`t$($parts[1]): $repeats повторени$(Word-Ending $repeats) * $imgs изображени$(Word-Ending $imgs) = $($img_repeats)"
     $total += $img_repeats
 	$iter += 1
-}
+} }
 
 $iter = 0
 
@@ -216,8 +225,7 @@ if ($is_structure_wrong -eq 0 -and $reg_dir -ne "") { Get-ChildItem -Path $reg_d
 if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 {
 	Write-Output "Количество обучающих изображений с повторениями: $total"
-	if ($desired_training_time -gt 0) 
-	{
+	if ($desired_training_time -gt 0) {
 		Write-Output "desired_training_time > 0"
 		Write-Output "Используем desired_training_time для вычисления шагов обучения, учитывая скорость GPU"
 		if ($gpu_training_speed -match '^(?:\d+\.\d+|\d+|\.\d+)(?:(?:it|s)(?:\\|\/)(?:it|s))')
@@ -246,18 +254,21 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 			WCO black red 0 "Неверно указана скорость обучения gpu_training_speed!"
 			$abort_script = "y" }
 	}
-	else
-	{
+	else if ($max_train_epochs -ge 1) {
 		Write-Output "Используем количество изображений для вычисления шагов обучения"
-		Write-Output "Количество эпох: $num_epochs"
+		Write-Output "Количество эпох: $max_train_epochs"
 		Write-Output "Размер обучающей партии (train_batch_size): $train_batch_size"
 		if ($reg_imgs -gt 0)
 		{
 			$total *= 2
 			Write-Output "Количество регуляризационных изображений больше 0: количество шагов будет увеличено вдвое"
 		}
-		$max_train_steps = [int]($total / $train_batch_size * $num_epochs)
-		WCO black gray 1 "Количество шагов: $total / $train_batch_size * $num_epochs = "; WCO white black 1 "$max_train_steps`n"
+		$max_train_steps = [int]($total / $train_batch_size * $max_train_epochs)
+		WCO black gray 1 "Количество шагов: $total / $train_batch_size * $max_train_epochs = "; WCO white black 1 "$max_train_steps`n"
+	}
+	else {
+		Write-Output "Используем пользовательское количество шагов обучения"
+		WCO black gray 1 "Количество шагов: " ; WCO white black 1 "$max_train_steps`n"
 	}
 	
 	if ($is_random_seed -le 0) { $seed = 1337 }
@@ -272,7 +283,15 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 	$output_dir = $output_dir.TrimEnd("\", "/")
 	$logging_dir = $logging_dir.TrimEnd("\", "/")
 	
-	$run_parameters = "--network_module=networks.lora --pretrained_model_name_or_path=`"$ckpt`" --train_data_dir=`"$image_dir`" --output_dir=`"$output_dir`" --output_name=`"$output_name`" --caption_extension=`".txt`" --resolution=$resolution --prior_loss_weight=1 --enable_bucket --min_bucket_reso=256 --max_bucket_reso=1024 --train_batch_size=$train_batch_size --lr_warmup_steps=$lr_warmup_steps --learning_rate=$learning_rate --unet_lr=$unet_lr --text_encoder_lr=$text_encoder_lr --max_train_steps=$([int]$max_train_steps) --use_8bit_adam --xformers --save_every_n_epochs=$save_every_n_epochs --save_last_n_epochs=$save_last_n_epochs --save_model_as=safetensors --keep_tokens=$keep_tokens --clip_skip=$clip_skip --seed=$seed --network_dim=$network_dim --cache_latents --lr_scheduler=$scheduler"
+	$run_parameters = "--network_module=networks.lora --pretrained_model_name_or_path=`"$ckpt`" --train_data_dir=`"$image_dir`" --output_dir=`"$output_dir`" --output_name=`"$output_name`" --caption_extension=`".txt`" --resolution=$resolution --prior_loss_weight=1 --enable_bucket --min_bucket_reso=256 --max_bucket_reso=1024 --train_batch_size=$train_batch_size --lr_warmup_steps=$lr_warmup_steps --learning_rate=$learning_rate --use_8bit_adam --xformers --save_every_n_epochs=$save_every_n_epochs --save_last_n_epochs=$save_last_n_epochs --save_model_as=safetensors --keep_tokens=$keep_tokens --clip_skip=$clip_skip --seed=$seed --network_dim=$network_dim --cache_latents --lr_scheduler=$scheduler --max_data_loader_n_workers=$max_data_loader_n_workers"
+	
+	if ($desired_training_time -gt 0) { $run_parameters += " --max_train_steps=$([int]$max_train_steps)" }
+	else if ($max_train_epochs -ge 1) { $run_parameters += " --max_train_epochs=$max_train_epochs)" }
+	else { $run_parameters += " --max_train_steps=$max_train_steps" }
+	
+	if ($unet_lr -ne $learning_rate) { $run_parameters += " --unet_lr=$unet_lr" }
+	
+	if ($text_encoder_lr -ne $learning_rate) { $run_parameters += " --text_encoder_lr=$text_encoder_lr" }
 	
 	if ($reg_dir -ne "") { $run_parameters += " --reg_data_dir=`"$reg_dir`"" }
 	
@@ -322,7 +341,7 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 		{
 			Set-Location -Path $sd_scripts_dir
 			.\venv\Scripts\activate
-			powershell accelerate launch --num_cpu_threads_per_process 12 train_network.py $run_parameters
+			powershell accelerate launch --num_cpu_threads_per_process $max_data_loader_n_workers train_network.py $run_parameters
 			deactivate
 			Set-Location -Path $script_origin
 		}
@@ -360,5 +379,5 @@ sleep 3
 
 if ($restart -eq 1) { powershell -File $PSCommandPath }
 
-#16.01.23
-#ver=1.04
+#17.01.23
+#ver=1.05

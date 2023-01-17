@@ -87,7 +87,8 @@ The *regularization_images* folder can be empty, the presence of regularization 
 [**Regularization images**](https://github.com/d8ahazard/sd_dreambooth_extension/wiki/Basics#dreambooth) help improve training accuracy.
 The regularization images allow you to "separate" the object being trained (**concept**) from the style of the image. During training, the network will be trained "in parallel" (actually sequentially, in the presence of regularizing images in a wise scenario the training time should be doubled) as not to look like **concept**. The transferability between models of such a LoRA network will become better.
 The following is an example of a comparison of networks trained on datasets without and with reg. images. The same [settings](https://pastebin.com/BLPs1BH2), the same training speed and seed. Both networks were trained for 30 minutes at 1.91s/it, the REG network was additionally trained on reg. images for 30 minutes. [Dataset](https://drive.google.com/drive/folders/1SZyqTssCq1TCk7ZMaag0CJUnLxdFkx3W?usp=share_link).
-Note the *variety* of regularized images. The images in the irregularized network look like bad copies of each other, despite the different sig:
+Note the *variety* of regularized images. The images in the irregularized network look like copies of each other, despite the different seed:
+(Probably need to make another grids, this network seems overfitted)
 
 -> ![](https://i.imgur.com/M014bvx.jpg) <-
 -> ![](https://i.imgur.com/GpzLriQ.jpg) <-
@@ -203,9 +204,11 @@ The following are grids comparing different *learning_rate*. All networks were t
 -> learning_rate = 1e-4, unet_lr = learning_rate, text_encoder_lr = **X**, scheduler = linear <-
 
 **$scheduler** is the *learning_rate* curve scheduler:
+
 - [constant](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Constant-Schedule): learning rate does not change in time from the beginning to the end of learning. The only scheduler that does not use the variable *lr_warmup_ratio*. ==Default scheduler==.
+
 All other schedulers use the variable *lr_warmup_ratio* and have the following wording:
-After a warmup period lasting *lr_warmup_ratio%* steps, during which the learning rate increases linearly between 0 and *learning_rate*:
+After a warmup period lasting *lr_warmup_ratio%* steps, during which the learning rate increases linearly between 0 and *learning_rate*...
 - [linear](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Linear-Schedule-with-Warmup): the learning rate decreases linearly from the *learning_rate* value to 0.
 - [cosine](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Cosine-with-Warmup): the learning rate decreases following the value of the cosine function between *learning_rate* and 0.
 - [cosine_with_restarts](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Cosine-With-Hard-Restarts): the learning rate decreases following the value of the cosine function between *learning_rate* and 0, with a few hard restarts.
@@ -215,7 +218,7 @@ After a warmup period lasting *lr_warmup_ratio%* steps, during which the learnin
 ![](https://files.catbox.moe/pp1zdz.png)
 -> learning_rate = 1e-4, unet_lr = learning_rate, text_encoder_lr = learning_rate, scheduler = **X** <-
 
-**$lr_warmup_ratio**: the percentage of steps starting from the first, during which the learning rate increases linearly from 0 to the *learning_rate* value. Small values or 0 allow you to capture a lot of information at the beginning of training and move on to finer "refinement" by the end. Values larger can help with the problem when the network becomes saturated very quickly at the beginning of training. Here you need to experiment, dataset plays a very important role.
+**$lr_warmup_ratio**: the percentage of steps starting from the first, during which the learning rate increases linearly from 0 to the *learning_rate* value. Small values or 0 allow you to capture a lot of information at the beginning of training and move on to finer "refinement" by the end. Values larger can help with the problem when the network [overfits very quickly at the beginning of training](https://stackoverflow.com/a/55942518). Here you need to experiment, dataset plays a very important role.
 This parameter is not applicable for *constant* scheduler.
 
 **$network_dim**: values can be different (I saw someone training at 1024), but it was found that values above 128/256 do not make a big difference. The higher the value, the higher the video memory consumption and output file size.

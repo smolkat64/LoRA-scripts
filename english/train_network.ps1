@@ -1,5 +1,5 @@
-﻿# LoRA retard-friendly train_network script v1.031 by anon
-# Последнее обновление: 16.01.23 06:28 UTC+3
+﻿# LoRA retard-friendly train_network script v1.052 by anon
+# Last update: 18.01.23 22:08 UTC+3
 # https://github.com/cloneofsimo/lora
 # https://github.com/kohya-ss/sd-scripts
 # https://rentry.org/2chAI_LoRA_Dreambooth_guide_english
@@ -25,9 +25,10 @@ $desired_training_time = 0 # If greater than 0, ignore number of images with rep
 $gpu_training_speed = "1.23it/s | 1.23s/it" # Average training speed, depending on GPU. Possible values are XX.XXit/s or XX.XXs/it
 
 # Main variables
+$max_train_epochs = 10 # Number of epochs. Have no power if $desired_training_time > 0
+$max_train_steps = 0 # (optional) Custom training steps number. desired_training_time and max_train_epochs must be equal zero for this variable to work
 $train_batch_size = 1 # How much images to train simultaneously. Higher number = less training steps (faster), higher VRAM usage
 $resolution = 512 # Training resolution (px)
-$num_epochs = 10 # Number of epochs. Have no power if $desired_training_time > 0
 $save_every_n_epochs = 1 # Save every n epochs
 $save_last_n_epochs = 999 # Save only last n epochs
 $max_token_length = 75 # Max token length. Possible values: 75 / 150 / 225
@@ -40,12 +41,14 @@ $text_encoder_lr = $learning_rate # Text encoder learning rate. By default equal
 $scheduler = "constant" # Scheduler to use for learning rate. Possible values: linear, cosine, cosine_with_restarts, polynomial, constant (default), constant_with_warmup
 $lr_warmup_ratio = 0.0 # Ratio of warmup steps in the learning rate scheduler to total training steps (0 to 1)
 $network_dim = 128 # Size of network. Higher number = higher accuracy, output file size and VRAM usage
+$max_data_loader_n_workers = 8 # Max number of cpu threads for DataLoader. The lower the number, the less is RAM consumptiong, faster epoch start and slower data loading. Lower numbers can negatively affect training speed
 $save_precision = "fp16" # Whether to use custom precision for saving, and its type. Possible values: no, float, fp16, bf16
 $mixed_precision = "fp16" # Whether to use mixed precision for training, and its type. Possible values: no, fp16, bf16
 $is_random_seed = 1 # Seed for training. 1 = random seed, 0 = static seed
 $shuffle_caption = 1 # Shuffle comma-separated captions
 $keep_tokens = 0 # Keep heading N tokens when shuffling caption tokens
 $do_not_interrupt = 0 # Do not interrupt script on questionable moments. Enabled by default if running in a chain
+
 # Script chain running
 # Here you specify the paths where the scripts for sequential execution are located
 # There could be any number of paths
@@ -82,7 +85,29 @@ function WCO($BackgroundColor, $ForegroundColor, $NewLine) {
 	$host.UI.RawUI.ForegroundColor = $fc
 }
 
-$current_version = "1.031"
+$current_version = "1.052"
+
+[console]::OutputEncoding = [text.encoding]::UTF8
+
+function Get-Changelog {
+	$changelog_link = "https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/english/script_changelog.txt"
+	$changelog = (Invoke-WebRequest -Uri $changelog_link).Content | Out-String
+	$changelog = $changelog -split "\r?\n"
+	$max_version = "0.0"
+	$last_version_string_index = 0; $index = 0
+	foreach ($line in $changelog) {
+		if ($line -match "`#+ v\d+[\.,]\d+") { $max_version = [float]($line -replace "^#+ +v"); $last_version_string_index = $index }
+		$index += 1
+	}
+	$max_version_date = $changelog[$last_version_string_index + 1] -replace "#+ +"
+	if ($max_version -gt $current_version) {
+		Write-Output ""
+		Write-Output "Full changelog:"
+		WCO black blue 0 "$changelog_link `n"
+		Write-Output "Changes in v${max_version} from ${max_version_date}:"
+		while (($last_version_string_index + 3) -le $changelog.Length) { Write-Output "$($changelog[$last_version_string_index + 2])"; $last_version_string_index += 1 }
+	}
+}
 
 # Autism case #1
 if ($dont_draw_flags -le 0) {
@@ -92,7 +117,7 @@ $version_string_length = $version_string.Length
 while ($strl -lt ($([system.console]::BufferWidth))) { $strl += 1; WCO white white 1 " " }; Write-Output ""; $strl = 0; while ($version_string_length -lt $(($([system.console]::BufferWidth) + $version_string.Length) / 2)) { WCO darkred white 1 " "; $version_string_length += 1 }; WCO darkred white 1 $version_string; $version_string_length = $version_string.Length; while ($version_string_length -lt $(($([system.console]::BufferWidth) + $version_string.Length) / 2 - $version_string.Length % 2 + $([system.console]::BufferWidth) % 2)) { WCO darkred white 1 " "; $version_string_length += 1 }; while ($strl -lt ($([system.console]::BufferWidth))) { $strl += 1; WCO white white 1 " " } }
 
 Write-Output " "
-Write-Output "If something not werks or werks not correctly, leave a message here:"
+Write-Output "If something not werks or not werks correctly, leave a message here:"
 WCO black blue 0 "https://github.com/anon-1337/LoRA-scripts/issues"
 Write-Output " "
 
@@ -101,19 +126,21 @@ $internet_available = 0
 $script_origin = (get-location).path
 Get-NetConnectionProfile | foreach { if ($_.IPv4Connectivity -eq "Internet") { $internet_available = 1 } }
 sleep 3
-if ((git --help) -and (curl --help) -and $internet_available -eq 1 -and -not $TestRun -ge 1 -and $ChainedRun -eq 0) {
+if ($internet_available -eq 1 -and $TestRun -le 0 -and $ChainedRun -eq 0) {
 	$script_url = "https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/english/train_network.ps1"
-	$script_github = curl --silent $script_url
+	$script_github = (Invoke-WebRequest -Uri $script_url).Content | Out-String -Stream
+	$script_github = $script_github -Split "\r?\n"
 	$new_version = [float]$($script_github[$script_github.Length - 1] -replace "#[a-zA-Z=]+")
 	if ([float]$current_version -lt $new_version -and (Is-Numeric $new_version)) { 
-		Write-Output "Update (v$current_version => v$new_version) available at:"
+		Write-Output "Update available (v$current_version => v$new_version):"
 		WCO black blue 0 $script_url
-		do { $do_update = Read-Host "Update? (y/N)" }
+		Get-Changelog
+		do { $do_update = Read-Host "Do you wish to update? Warning: script will be overwrited (y/N)" }
 		until ($do_update -eq "y" -or $do_update -ceq "N")
 		if ($do_update -eq "y") {
 			$restart = 1
 			Set-Location -Path $script_origin
-			curl --silent $script_url --output "$PSCommandPath"
+			curl -s $script_url -o "$PSCommandPath"
 			WCO black green 0 "Updated to v$new_version!"
 			Write-Output "Restarting..."
 			sleep 2 }
@@ -123,16 +150,22 @@ if ((git --help) -and (curl --help) -and $internet_available -eq 1 -and -not $Te
 
 if ($restart -ne 1) {
 
-Write-Output "Calculating number of images in folders"
-
 $total = 0
 $is_structure_wrong = 0
 $abort_script = 0
 $iter = 0
 
+Write-Output "Checking paths..."
+$all_paths = @( $sd_scripts_dir, $ckpt, $image_dir, $reg_dir, $vae_path )
+foreach ($path in $all_paths) {
+	if ($path -ne "" -and !(Test-Path $path)) {
+		$is_structure_wrong = 1
+		Write-Output "Path $path does not exist" } }
+
 if ($is_chained_run -ge 1) { $do_not_interrupt = 1 }
 
-Get-ChildItem -Path $image_dir -Directory | ForEach-Object {
+if ($is_structure_wrong -eq 0) { Get-ChildItem -Path $image_dir -Directory | ForEach-Object {
+	if ($iter -eq 0) { Write-Output "Calculating number of images in folders" }
     $parts = $_.Name.Split("_")
     if (!(Is-Numeric $parts[0]))
     {
@@ -153,7 +186,7 @@ Get-ChildItem -Path $image_dir -Directory | ForEach-Object {
     Write-Output "`t$($parts[1]): $repeats repeats * $imgs images = $($img_repeats)"
     $total += $img_repeats
 	$iter += 1
-}
+} }
 
 $iter = 0
 
@@ -174,24 +207,21 @@ if ($is_structure_wrong -eq 0 -and $reg_dir -ne "") { Get-ChildItem -Path $reg_d
     $repeats = [int]$parts[0]
     $reg_imgs = Get-ChildItem $_.FullName -Depth 0 -File -Include *.jpg, *.png, *.webp | Measure-Object | ForEach-Object { $_.Count }
 	if ($iter -eq 0) { Write-Output "Regularization images:" }
-	if ($do_not_interrupt -le 0) {
-		if ($reg_imgs -eq 0) {
-			WCO black darkyellow 0 "Warning: regularization images folder exists, but is empty"
-			do { $abort_script = Read-Host "Abort script? (y/N)" }
-			until ($abort_script -eq "y" -or $abort_script -ceq "N")
-			return }
-		else {
-			$img_repeats = ($repeats * $reg_imgs)
-			Write-Output "`t$($parts[1]): $repeats repeats * $reg_imgs images = $($img_repeats)"
-			$iter += 1 }
-	}
+	if ($reg_imgs -eq 0 -and $do_not_interrupt -le 0) {
+		WCO black darkyellow 0 "Warning: regularization images folder exists, but is empty"
+		do { $abort_script = Read-Host "Abort script? (y/N)" }
+		until ($abort_script -eq "y" -or $abort_script -ceq "N")
+		return }
+	else {
+		$img_repeats = ($repeats * $reg_imgs)
+		Write-Output "`t$($parts[1]): $repeats repeats * $reg_imgs images = $($img_repeats)"
+		$iter += 1 }
 } } } }
 
 if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 {
 	Write-Output "Image number with repeats: $total"
-	if ($desired_training_time -gt 0) 
-	{
+	if ($desired_training_time -gt 0) {
 		Write-Output "desired_training_time > 0"
 		Write-Output "Using desired_training_time for calculation of training steps, considering the speed of the GPU"
 		if ($gpu_training_speed -match '^(?:\d+\.\d+|\d+|\.\d+)(?:(?:it|s)(?:\\|\/)(?:it|s))')
@@ -207,31 +237,34 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 				until ($reg_img_compensate_time -eq "y" -or $reg_img_compensate_time -ceq "N") }
 				if ($reg_img_compensate_time -eq "y" -or $do_not_interrupt -ge 1) {
 					$max_train_steps = [int]([math]::Round($max_train_steps / 2))
-					Write-Output "Total training steps: $([math]::Round($($speed_value * 60), 2)) it/min * $desired_training_time minute(-s) ≈ $max_train_steps training step(-s)" }
+					WCO black gray 1 "Total training steps: $([math]::Round($($speed_value * 60), 2)) it/min * $desired_training_time minute(-s) ≈"; WCO white black 1 "$max_train_steps training step(-s)" }
 				else {
 					Write-Output "Your choice is no. Increased time will not be compensated, duration of training is doubled"
-					Write-Output "Total training steps: $([math]::Round($($speed_value * 60), 2)) it/min * $desired_training_time minute(-s) * 2 ≈ $max_train_steps training step(-s)" }
+					WCO black gray 1 "Total training steps: $([math]::Round($($speed_value * 60), 2)) it/min * $desired_training_time minute(-s) * 2 ≈"; WCO white black 1 "$max_train_steps training step(-s)" }
 			}
 			else {
 				$max_train_steps = [int]([math]::Round($max_train_steps))
-				Write-Output "Total training steps: $([math]::Round($($speed_value * 60), 2)) it/min * $desired_training_time minute(-s) ≈ $max_train_steps training step(-s)" }
+				WCO black gray 1 "Total training steps: $([math]::Round($($speed_value * 60), 2)) it/min * $desired_training_time minute(-s) ≈"; WCO white black 1 "$max_train_steps training step(-s)" }
 		}
 		else {
 			WCO black red 0 "The learning rate is incorrect in gpu_training_speed variable!"
 			$abort_script = "y" }
 	}
-	else
-	{
+	elseif ($max_train_epochs -ge 1) {
 		Write-Output "Using number of training images to calculate total training steps"
-		Write-Output "Number of epochs: $num_epochs"
+		Write-Output "Number of epochs: $max_train_epochs"
 		Write-Output "Training batch size: $train_batch_size"
 		if ($reg_imgs -gt 0)
 		{
 			$total *= 2
 			Write-Output "Number of regularization images is greater than 0: total train steps doubled"
 		}
-		$max_train_steps = [int]($total / $train_batch_size * $num_epochs)
-		Write-Output "Total training steps: $total / $train_batch_size * $num_epochs = $max_train_steps"
+		$max_train_steps = [int]($total / $train_batch_size * $max_train_epochs)
+		WCO black gray 1 "Total training steps: $total / $train_batch_size * $max_train_epochs = "; WCO white black 1 "$max_train_steps`n"
+	}
+	else {
+		Write-Output "Using custom training steps number"
+		WCO black gray 1 "Total training steps: $total / $train_batch_size * $num_epochs ="; WCO white black 1 "$max_train_steps"
 	}
 	
 	if ($is_random_seed -le 0) { $seed = 1337 }
@@ -246,7 +279,11 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 	$output_dir = $output_dir.TrimEnd("\", "/")
 	$logging_dir = $logging_dir.TrimEnd("\", "/")
 	
-	$run_parameters = "--network_module=networks.lora --pretrained_model_name_or_path=`"$ckpt`" --train_data_dir=`"$image_dir`" --output_dir=`"$output_dir`" --output_name=`"$output_name`" --caption_extension=`".txt`" --resolution=$resolution --prior_loss_weight=1 --enable_bucket --min_bucket_reso=256 --max_bucket_reso=1024 --train_batch_size=$train_batch_size --lr_warmup_steps=$lr_warmup_steps --learning_rate=$learning_rate --max_train_steps=$([int]$max_train_steps) --use_8bit_adam --xformers --save_every_n_epochs=$save_every_n_epochs --save_last_n_epochs=$save_last_n_epochs --save_model_as=safetensors --keep_tokens=$keep_tokens --clip_skip=$clip_skip --seed=$seed --network_dim=$network_dim --cache_latents --lr_scheduler=$scheduler"
+	$run_parameters = "--network_module=networks.lora --pretrained_model_name_or_path=`"$ckpt`" --train_data_dir=`"$image_dir`" --output_dir=`"$output_dir`" --output_name=`"$output_name`" --caption_extension=`".txt`" --resolution=$resolution --prior_loss_weight=1 --enable_bucket --min_bucket_reso=256 --max_bucket_reso=1024 --train_batch_size=$train_batch_size --lr_warmup_steps=$lr_warmup_steps --learning_rate=$learning_rate --use_8bit_adam --xformers --save_every_n_epochs=$save_every_n_epochs --save_last_n_epochs=$save_last_n_epochs --save_model_as=safetensors --keep_tokens=$keep_tokens --clip_skip=$clip_skip --seed=$seed --network_dim=$network_dim --cache_latents --lr_scheduler=$scheduler --max_data_loader_n_workers=$max_data_loader_n_workers"
+	
+	if ($desired_training_time -gt 0) { $run_parameters += " --max_train_steps=$([int]$max_train_steps)" }
+	elseif ($max_train_epochs -ge 1) { $run_parameters += " --max_train_epochs=$max_train_epochs" }
+	else { $run_parameters += " --max_train_steps=$max_train_steps" }
 	
 	if ($unet_lr -ne $learning_rate) { $run_parameters += " --unet_lr=$unet_lr" }
 	
@@ -257,7 +294,7 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 	if ($max_token_length -eq 75) { }
 	else {
 		if ($max_token_length -eq 150 -or $max_token_length -eq 225) { $run_parameters += " --max_token_length=$($max_token_length)" }
-		else { WCO black darkyellow 0 "The max_token_length is incorrect! Using value 75" } }
+		else { WCO black darkyellow 0 "max_token_length is incorrect! Using value 75" } }
 	
 	if ($shuffle_caption -ge 1) { $run_parameters += " --shuffle_caption" }
 	if ($logging_enabled -ge 1) { $run_parameters += " --logging_dir=`"$logging_dir`" --log_prefix=`"$output_name`""}
@@ -300,7 +337,7 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 		{
 			Set-Location -Path $sd_scripts_dir
 			.\venv\Scripts\activate
-			powershell accelerate launch --num_cpu_threads_per_process 12 train_network.py $run_parameters
+			powershell accelerate launch --num_cpu_threads_per_process $max_data_loader_n_workers train_network.py $run_parameters
 			deactivate
 			Set-Location -Path $script_origin
 		}
@@ -333,10 +370,9 @@ $strl = 0
 $version_string_length = $version_string.Length
 while ($strl -lt ($([system.console]::BufferWidth))) { $strl += 1; WCO white white 1 " " }; Write-Output ""; $strl = 0; while ($version_string_length -lt $(($([system.console]::BufferWidth) + $version_string.Length) / 2)) { WCO darkblue white 1 " "; $version_string_length += 1 }; WCO darkblue white 1 $version_string; $version_string_length = $version_string.Length; while ($version_string_length -lt $(($([system.console]::BufferWidth) + $version_string.Length) / 2 - $version_string.Length % 2 + $([system.console]::BufferWidth) % 2)) { WCO darkblue white 1 " "; $version_string_length += 1 }; while ($strl -lt ($([system.console]::BufferWidth))) { $strl += 1; WCO darkred white 1 " " }
 Write-Output "`n" }
-
 sleep 3
 
 if ($restart -eq 1) { powershell -File $PSCommandPath }
 
-
-#ver=1.031
+#18.01.23
+#ver=1.052

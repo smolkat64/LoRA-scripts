@@ -1,5 +1,5 @@
 ﻿# LoRA retard-friendly train_network script v1.052 by anon
-# Последнее обновление: 16.01.23 06:28 по МСК
+# Последнее обновление: 18.01.23 22:08 по МСК
 # https://github.com/cloneofsimo/lora
 # https://github.com/kohya-ss/sd-scripts
 # https://rentry.org/2chAI_LoRA_Dreambooth_guide
@@ -13,7 +13,7 @@ $sd_scripts_dir = "X:\git-repos\sd-scripts\" # Путь к папке с реп�
 $ckpt = "X:\SD-models\checkpoint.safetensors" # Путь к чекпоинту (ckpt / safetensors)
 $is_sd_v2_ckpt = 0 # Поставь '1' если загружаешь SD 2.x чекпоинт
 $is_sd_v2_768_ckpt = 0 # Также поставь здесь значение '1', если загружаешь SD 2.x-768 чекпоинт
-$image_dir = "X:\training_data\img" # Путь к папке с изображениями
+$image_dir = "X:\training_data\img\" # Путь к папке с изображениями
 $reg_dir = "" # Путь к папке с регуляризационными изображениями (опционально)
 $output_dir = "X:\LoRA\" # Директория сохранения LoRA чекпоинтов
 $output_name = "my_LoRA_network_v1" # Название файла (расширение не нужно)
@@ -163,7 +163,7 @@ $is_structure_wrong = 0
 $abort_script = 0
 $iter = 0
 
-Write-Output "Проверка путей"
+Write-Output "Проверка путей..."
 $all_paths = @( $sd_scripts_dir, $ckpt, $image_dir, $reg_dir, $vae_path )
 foreach ($path in $all_paths) {
 	if ($path -ne "" -and !(Test-Path $path)) {
@@ -272,7 +272,7 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 	}
 	else {
 		Write-Output "Используем пользовательское количество шагов обучения"
-		WCO black gray 1 "Количество шагов: " ; WCO white black 1 "$max_train_steps`n"
+		WCO black gray 1 "Количество шагов: "; WCO white black 1 "$max_train_steps`n"
 	}
 	
 	if ($is_random_seed -le 0) { $seed = 1337 }
@@ -371,9 +371,16 @@ if ($restart -ne 1 -and $abort_script -ne "y") { foreach ($script_string in $scr
 	}
 } }
 
+# Autism case #2
+Write-Output ""
+if ($dont_draw_flags -le 0) {
+$strl = 0
+$version_string_length = $version_string.Length
+while ($strl -lt ($([system.console]::BufferWidth))) { $strl += 1; WCO white white 1 " " }; Write-Output ""; $strl = 0; while ($version_string_length -lt $(($([system.console]::BufferWidth) + $version_string.Length) / 2)) { WCO darkblue white 1 " "; $version_string_length += 1 }; WCO darkblue white 1 $version_string; $version_string_length = $version_string.Length; while ($version_string_length -lt $(($([system.console]::BufferWidth) + $version_string.Length) / 2 - $version_string.Length % 2 + $([system.console]::BufferWidth) % 2)) { WCO darkblue white 1 " "; $version_string_length += 1 }; while ($strl -lt ($([system.console]::BufferWidth))) { $strl += 1; WCO darkred white 1 " " }
+Write-Output "`n" }
 sleep 3
 
 if ($restart -eq 1) { powershell -File $PSCommandPath }
 
-#17.01.23
+#18.01.23
 #ver=1.052

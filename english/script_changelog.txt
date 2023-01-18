@@ -1,0 +1,8 @@
+### Changelog
+
+### v1.052
+### 18.01.2023
+- New variable max_data_loader_n_workers. Might increase training speed
+- Custom training steps number
+- Paths checking for existence
+- Bugs and red error fixes. I guess it's stable now ¯\_(ツ)_/¯

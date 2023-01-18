@@ -1,4 +1,4 @@
-﻿# LoRA retard-friendly train_network script v1.051 by anon
+﻿# LoRA retard-friendly train_network script v1.052 by anon
 # Последнее обновление: 16.01.23 06:28 по МСК
 # https://github.com/cloneofsimo/lora
 # https://github.com/kohya-ss/sd-scripts
@@ -85,12 +85,14 @@ function WCO($BackgroundColor, $ForegroundColor, $NewLine) {
 	$host.UI.RawUI.ForegroundColor = $fc
 }
 
-$current_version = "1.051"
+$current_version = "1.052"
 
 [console]::OutputEncoding = [text.encoding]::UTF8
 
 function Get-Changelog {
-	$changelog = curl -s"https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9/script_changelog.txt"
+	$changelog_link = "https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/русский/script_changelog.txt"
+	$changelog = (Invoke-WebRequest -Uri $changelog_link).Content | Out-String
+	$changelog = $changelog -split "\r?\n"
 	$max_version = "0.0"
 	$last_version_string_index = 0; $index = 0
 	foreach ($line in $changelog) {
@@ -99,6 +101,9 @@ function Get-Changelog {
 	}
 	$max_version_date = $changelog[$last_version_string_index + 1] -replace "#+ +"
 	if ($max_version -gt $current_version) {
+		Write-Output ""
+		Write-Output "Полный ченджлог:"
+		WCO black blue 0 "$changelog_link `n"
 		Write-Output "Изменения в v${max_version} от ${max_version_date}:"
 		while (($last_version_string_index + 3) -le $changelog.Length) { Write-Output "$($changelog[$last_version_string_index + 2])"; $last_version_string_index += 1 }
 	}
@@ -122,14 +127,15 @@ $script_origin = (get-location).path
 Get-NetConnectionProfile | foreach { if ($_.IPv4Connectivity -eq "Internet") { $internet_available = 1 } }
 sleep 3
 if ($internet_available -eq 1 -and $TestRun -le 0 -and $ChainedRun -eq 0) {
-	$script_url = "https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9/train_network.ps1"
-	$script_github = curl -s $script_url
+	$script_url = "https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/русский/train_network.ps1"
+	$script_github = (Invoke-WebRequest -Uri $script_url).Content | Out-String -Stream
+	$script_github = $script_github -Split "\r?\n"
 	$new_version = [float]$($script_github[$script_github.Length - 1] -replace "#[a-zA-Z=]+")
 	if ([float]$current_version -lt $new_version -and (Is-Numeric $new_version)) { 
 		Write-Output "Доступно обновление скрипта (v$current_version => v$new_version) по адресу:"
 		WCO black blue 0 $script_url
 		Get-Changelog
-		do { $do_update = Read-Host "Выполнить обновление? (y/N)" }
+		do { $do_update = Read-Host "Выполнить обновление? Внимание: файл будет перезаписан (y/N)" }
 		until ($do_update -eq "y" -or $do_update -ceq "N")
 		if ($do_update -eq "y") {
 			$restart = 1
@@ -209,17 +215,15 @@ if ($is_structure_wrong -eq 0 -and $reg_dir -ne "") { Get-ChildItem -Path $reg_d
     $repeats = [int]$parts[0]
     $reg_imgs = Get-ChildItem $_.FullName -Depth 0 -File -Include *.jpg, *.png, *.webp | Measure-Object | ForEach-Object { $_.Count }
 	if ($iter -eq 0) { Write-Output "Регуляризационные изображения:" }
-	if ($do_not_interrupt -le 0) {
-		if ($reg_imgs -eq 0) {
-			WCO black darkyellow 0 "Внимание: папка для регуляризационных изображений присутствует, но в ней ничего нет"
-			do { $abort_script = Read-Host "Прервать выполнение скрипта? (y/N)" }
-			until ($abort_script -eq "y" -or $abort_script -ceq "N")
-			return }
-		else {
-			$img_repeats = ($repeats * $reg_imgs)
-			Write-Output "`t$($parts[1]): $repeats повторени$(Word-Ending $repeats) * $reg_imgs изображени$(Word-Ending $reg_imgs) = $($img_repeats)"
-			$iter += 1 }
-	}
+	if ($reg_imgs -eq 0 -and $do_not_interrupt -le 0) {
+		WCO black darkyellow 0 "Внимание: папка для регуляризационных изображений присутствует, но в ней ничего нет"
+		do { $abort_script = Read-Host "Прервать выполнение скрипта? (y/N)" }
+		until ($abort_script -eq "y" -or $abort_script -ceq "N")
+		return }
+	else {
+		$img_repeats = ($repeats * $reg_imgs)
+		Write-Output "`t$($parts[1]): $repeats повторени$(Word-Ending $repeats) * $reg_imgs изображени$(Word-Ending $reg_imgs) = $($img_repeats)"
+		$iter += 1 }
 } } } }
 
 if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
@@ -356,10 +360,10 @@ if ($restart -ne 1 -and $abort_script -ne "y") { foreach ($script_string in $scr
 			if ([System.IO.Path]::GetExtension($path) -eq ".ps1") {
 				if ($TestRun -ge 1) {
 					Write-Output "Запускаем следующий скрипт в цепочке (тестовый режим): $path"
-					powershell -File $path -ChainedRun 1 -TestRun 1 }
+					powershell -ChainedRun 1 -TestRun 1 -File $path }
 				else {
 					Write-Output "Запускаем следующий скрипт в цепочке: $path"
-					powershell -File $path -ChainedRun 1 }
+					powershell -ChainedRun 1 -File $path }
 			}
 			else { WCO black red 0 "Ошибка: $path не является допустимым скриптом" }
 		}
@@ -367,17 +371,9 @@ if ($restart -ne 1 -and $abort_script -ne "y") { foreach ($script_string in $scr
 	}
 } }
 
-# Аутизм №2
-Write-Output ""
-if ($dont_draw_flags -le 0) {
-$strl = 0
-$version_string_length = $version_string.Length
-while ($strl -lt ($([system.console]::BufferWidth))) { $strl += 1; WCO white white 1 " " }; Write-Output ""; $strl = 0; while ($version_string_length -lt $(($([system.console]::BufferWidth) + $version_string.Length) / 2)) { WCO darkblue white 1 " "; $version_string_length += 1 }; WCO darkblue white 1 $version_string; $version_string_length = $version_string.Length; while ($version_string_length -lt $(($([system.console]::BufferWidth) + $version_string.Length) / 2 - $version_string.Length % 2 + $([system.console]::BufferWidth) % 2)) { WCO darkblue white 1 " "; $version_string_length += 1 }; while ($strl -lt ($([system.console]::BufferWidth))) { $strl += 1; WCO darkred white 1 " " }
-Write-Output "`n" }
-
 sleep 3
 
 if ($restart -eq 1) { powershell -File $PSCommandPath }
 
 #17.01.23
-#ver=1.051
+#ver=1.052

@@ -1,6 +1,6 @@
 # LoRA guide
 -> by anons <-
--> last update: 17.01.2023 UTC+3 <-
+-> last update: 19.01.2023 UTC+3 <-
 -> [**Русская версия**](https://rentry.org/2chAI_LoRA_Dreambooth_guide)<-
 ***
 ## Table of contents
@@ -84,14 +84,9 @@ Where **n** – number of *repeats* of the given concept; **conceptA**, **concep
 **Repeats** are needed to give more *weight* to a particular folder. For example, you have a *2_HighRes* folder with 20 images inside and a *1_LowRes* folder with 10 images inside. That would add up to 50 (2 \* 20 + 1 \* 10) images, and the neural network would learn 80% (2 \* 20 / 50) of the time on the first folder and 20% (1 \* 10 / 50) of the time on the second, thereby reducing the impact of the folder with low quality images.
 
 The *regularization_images* folder can be empty, the presence of regularization images is optional.
-[**Regularization images**](https://github.com/d8ahazard/sd_dreambooth_extension/wiki/Basics#dreambooth) help improve training accuracy.
-The regularization images allow you to "separate" the object being trained (**concept**) from the style of the image. During training, the network will be trained "in parallel" (actually sequentially, in the presence of regularizing images in a wise scenario the training time should be doubled) as not to look like **concept**. The transferability between models of such a LoRA network will become better.
-The following is an example of a comparison of networks trained on datasets without and with reg. images. The same [settings](https://pastebin.com/BLPs1BH2), the same training speed and seed. Both networks were trained for 30 minutes at 1.91s/it, the REG network was additionally trained on reg. images for 30 minutes. [Dataset](https://drive.google.com/drive/folders/1SZyqTssCq1TCk7ZMaag0CJUnLxdFkx3W?usp=share_link).
-Note the *variety* of regularized images. The images in the irregularized network look like copies of each other, despite the different seed:
-(Probably need to make another grids, this network seems overfitted)
-
--> ![](https://i.imgur.com/M014bvx.jpg) <-
--> ![](https://i.imgur.com/GpzLriQ.jpg) <-
+In theory, [**regularization images**](https://github.com/d8ahazard/sd_dreambooth_extension/wiki/Basics#dreambooth) help improve training accuracy.
+The regularization images allow you to "separate" the object being trained (**concept**) from the style of the image. During training, the network will be trained "in parallel" (actually sequentially, in the presence of regularizing images in a wise scenario the training time should be doubled) how **concept** should not look like. The transferability between models of such a LoRA network will become better (again, in theory).
+If you are not sure whether you should use regularization images or not, **I suggest you not to use them**, unless you know what you are doing.
 
 !!! info How to work with them
 	For example, if you are training a person's face (a man) and every description file has the words *photo of a PersonName* in it, it's a good idea to open the WebUI and generate images with the prompt *photo of a man*. How many? At least as many as the number of images of the man's face in the example. More is better.

@@ -126,7 +126,7 @@ $internet_available = 0
 $script_origin = (get-location).path
 Get-NetConnectionProfile | foreach { if ($_.IPv4Connectivity -eq "Internet") { $internet_available = 1 } }
 sleep 3
-if ($internet_available -eq 1 -and $TestRun -le 0 -and $ChainedRun -eq 0) {
+if ($internet_available -eq 1 -and $TestRun -le 0 -and $ChainedRun -eq 0 -and $do_not_interrupt -le 0) {
 	$script_url = "https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/english/train_network.ps1"
 	$script_github = (Invoke-WebRequest -Uri $script_url).Content | Out-String -Stream
 	$script_github = $script_github -Split "\r?\n"

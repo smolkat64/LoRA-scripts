@@ -1,6 +1,6 @@
 # Гайд по LoRA
 -> by anons <-
--> последнее обновление: 16.01.2023 <-
+-> последнее обновление: 19.01.2023 <-
 -> [**English version**](https://rentry.org/2chAI_LoRA_Dreambooth_guide_english) <-
 ***
 ## Содержание

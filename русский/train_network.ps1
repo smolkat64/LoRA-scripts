@@ -58,7 +58,7 @@ $script_paths = @(
 )
 
 # Дополнительные настройки
-$device = "cuda" # Какое устройство использовать для обучения. Возможные значения: cuda, cpu
+<# $device = "cuda" #> # Какое устройство использовать для обучения. Возможные значения: cuda, cpu
 $gradient_checkpointing = 0 # https://huggingface.co/docs/transformers/perf_train_gpu_one#gradient-checkpointing
 $gradient_accumulation_steps = 1 # https://huggingface.co/docs/transformers/perf_train_gpu_one#gradient-accumulation
 $max_data_loader_n_workers = 8 # Максимальное количество потоков процессора для DataLoader
@@ -343,7 +343,7 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 	$run_parameters += " --keep_tokens=$keep_tokens"
 	
 	# additional
-	$run_parameters += " --device=`"$device`""
+	<# $run_parameters += " --device=`"$device`"" #>
 	if ($gradient_checkpointing -ge 1) { $run_parameters += " --gradient_checkpointing"  }
 	if ($gradient_accumulation_steps -gt 1) { $run_parameters += " --gradient_accumulation_steps=$gradient_accumulation_steps" }
 	$run_parameters += " --max_data_loader_n_workers=$max_data_loader_n_workers"

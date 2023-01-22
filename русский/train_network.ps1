@@ -1,4 +1,4 @@
-﻿# LoRA retard-friendly train_network script v1.1 by anon
+﻿# LoRA retard-friendly train_network script v1.11 by anon
 # Последнее обновление: 22.01.23 20:17 по МСК
 # Актуально по состоянию на версию sd-scripts 0.4.0
 # https://github.com/cloneofsimo/lora
@@ -78,7 +78,7 @@ $dont_draw_flags = 0 # Не рисовать флаги
 <# ##### Конец конфига ##### #>
 
 [console]::OutputEncoding = [text.encoding]::UTF8
-$current_version = "1.1"
+$current_version = "1.11"
 if ($do_not_clear_host -le 0) { Clear-Host } 
 
 function Is-Numeric ($value) { return $value -match "^[\d\.]+$" }
@@ -404,4 +404,4 @@ sleep 3
 if ($restart -eq 1) { powershell -File $PSCommandPath }
 
 #22.01.23
-#ver=1.1
+#ver=1.11

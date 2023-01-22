@@ -13,3 +13,6 @@
   New variable device
 - Warning! Critical bug was discovered on 21.01.2023. More info in the guide:
   https://rentry.org/2chAI_LoRA_Dreambooth_guide_english
+### v1.11
+### 22.01.2023
+- hotfix device variable, it's not added actually

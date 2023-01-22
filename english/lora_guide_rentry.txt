@@ -3,10 +3,25 @@
 -> last update: 19.01.2023 UTC+3 <-
 -> [**Русская версия**](https://rentry.org/2chAI_LoRA_Dreambooth_guide)<-
 ***
-## Table of contents
-[TOC]
+[TOC2]
+***
 !!! note
 	Consider joining the [discussions](https://github.com/anon-1337/LoRA-scripts/discussions) on GitHub if you have something useful to add.
+***
+!!! warning WebUI native support
+	Jan 22, 2023 AUTOMATIC1111 added [native support]((https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/855b9e3d1c5a1bd8c2d815d38a38bc7c410be5a8)) for LoRA networks to the WebUI.
+	But kohya-ss (the author of the script used in the guide) says that networks trained with the script version 0.4.0, as well as those trained based on SD 2.x checkpoints **do not work in WebUI yet**, and advises to train on the script version 0.3.2, or use his extension [sd-additional-networks.](https://github.com/kohya-ss/sd-webui-additional-networks)
+!!! danger Critical bug in kohya-ss/sd-scripts
+	[21.01.2023 a topic was raised about the bug causing underflow of layer weights during training (weights values close to zero were rounded to zero.)](https://github.com/kohya-ss/sd-webui-additional-networks/issues/49)
+	At the time of the update the bug was fixed: a new argument ``--network_alpha``` was added to prevent this behavior. **The new variable most likely needs a different ```learning_rate```** (the author of the script as a temporary solution offers a value of ```1e-3``` for ```network_dim = 128; network_alpha = 1```). Waiting for updates.
+	[Script](https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9/train_network.ps1) was updated.
+	If you don't have trained LoRA network working (gives NaN error or no change in image) – update to sd-scripts version 0.4.0 or higher and retrain.
+	You can also check your old nets: there is check_lora_weights.py script in *sd-scripts\networks\** path. Example usage:
+	```powershell
+	.\venv\Scripts\activate```
+	```powershell
+	.\networks\check_lora_weights.py "X:\LoRA\LoRA_network.safetensors"```
+	**If you used ```Clip Skip = 2``` during training, the values of ```lora_te_text_model_encoder_layers_11_\*``` will be 0.0, this is normal. These layers are not trained at this value of Clip Skip.
 ***
 ## What is LoRA?
 
@@ -16,16 +31,26 @@
 - small output file size;
 - results are sometimes better than traditional fine-tuning.
 
-Requirements for successful work: NVidia video card, more than 6GB of VRAM.
+Requirements for training: NVidia video card, more than 6GB of VRAM.
 ***
 ## Usage
 
 There are currently two ways to use the LoRA network:
-1. Use as additional weights "on the fly"
-2. Merge with SD checkpoint
+1. WebUI's prompt
+2. Using sd-webui-additional-networks extension by kohya-ss
+3. Merge with SD checkpoint
 
-#### Method 1 – "on the fly"
-!!! note This is the recommended way to use the LoRA.
+#### Method 2 – using in WebUI's prompt
+!!! danger Warning!
+	As of 22.01.2023 19:49 UTC+3 networks, trained on a version of sd-scripts 0.4.0, and also SD 2.x networks won't work this way.
+	Use method 2 instead.
+	
+1. Click **Show extra networks** and open **Lora** tab, choose network | 2. LoRA will show up in prompt (edit the value ```:``` to change weight)
+------ | ------
+![](https://i.imgur.com/Jl6oUJg.png) | ![](https://i.imgur.com/ohIJxWu.png)
+
+#### Method 2 – using sd-webui-additional-networks extension
+!!! note As of 22.01.2023 19:49 UTC+3 this is the recommended way to use the LoRA.
 Install [extension by kohya-ss](https://github.com/kohya-ss/sd-webui-additional-networks) for A1111-webui.
 By default, network files are stored in the *stable-diffusion-webui\models\lora\\* directory.
 It's easy to use:
@@ -33,7 +58,7 @@ It's easy to use:
 ------ | ------
 ![](https://i.imgur.com/GvJhlWg.png) | ![](https://i.imgur.com/Ur9iFWk.png)
 
-#### Method 2 – merge with checkpoint
+#### Method 3 – merge with checkpoint
 Install [extension by d8ahazard](https://github.com/d8ahazard/sd_dreambooth_extension) for A1111-webui.
 !!! error CKPT vs SAFETENSORS
     The safetensors files are not (yet) supported! Good news: ckpt can usually be downloaded from the same place where safetensors was downloaded.
@@ -64,7 +89,7 @@ First, make sure that the checkpoint file *<model_name>.ckpt* is in the *stable-
 	Make the machines do the hard work.
     To speed up manual tagging you can use [sd-tagging-helper](https://github.com/arenatemp/sd-tagging-helper/).
 	There is also [separate software](https://github.com/starik222/BooruDatasetTagManager) and extensions ([1](https://github.com/toshiaki1729/stable-diffusion-webui-dataset-tag-editor), [2](https://github.com/toriato/stable-diffusion-webui-wd14-tagger), [3](https://github.com/SesuMoe/sd-tagger-webui)) for A1111-webui.
-	You can use [Grabber](https://github.com/Bionus/imgbrd-grabber/releases) with [these settings](https://i.imgur.com/VH5HOcQ.png) to download images from various booru boards along with tags.
+	You can use [Grabber](https://github.com/Bionus/imgbrd-grabber/releases) with [these settings](https://i.imgur.com/VH5HOcQ.png) (copy and paste: ```%all:unsafe,separator=^,^ %```) to download images from various booru boards along with tags.
 	
 ***
 

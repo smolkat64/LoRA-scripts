@@ -6,3 +6,10 @@
 - Custom training steps number
 - Paths checking for existence
 - Bugs and red error fixes. I guess it's stable now ¯\_(ツ)_/¯
+### v1.1
+### 22.01.2023
+- Up to date as of version of sd-scripts 0.4.0:
+  New variable network_alpha
+  New variable device
+- Warning! Critical bug was discovered on 21.01.2023. More info in the guide:
+  https://rentry.org/2chAI_LoRA_Dreambooth_guide_english

@@ -1,4 +1,4 @@
-﻿# LoRA retard-friendly train_network script v1.06 by anon
+﻿# LoRA retard-friendly train_network script v1.1 by anon
 # Последнее обновление: 22.01.23 20:17 по МСК
 # Актуально по состоянию на версию sd-scripts 0.4.0
 # https://github.com/cloneofsimo/lora
@@ -43,7 +43,7 @@ $scheduler = "linear" # Планировщик скорости обучения
 $lr_warmup_ratio = 0.0 # Отношение количества шагов разогрева планировщика к количеству шагов обучения (от 0 до 1). Не имеет силы при планировщике constant
 $network_dim = 128 # Размер (ранк) сети. Чем больше значение, тем больше точность и размер выходного файла
 $network_alpha = 1 # Альфа сети. Стандартное значение - 1
-				   # Если вы хотите повторить старое поведение скрипта (до версии sd-scripts 0.3.2), выставьте значение, равное network_dim (не рекомендуется, может вызвать антипереполнение весов)
+				   # Если вы хотите повторить старое поведение скрипта (до версии sd-scripts 0.3.2), выставьте значение, равное network_dim (не рекомендуется, может вызвать антипереполнение значений весов)
 $is_random_seed = 1 # Сид обучения. 1 = рандомный сид, 0 = статичный
 $shuffle_caption = 1 # Перетасовывать ли теги в файлах описания, разделённых запятой
 $keep_tokens = 0 # Не перетасовывать первые N токенов при перемешивании описаний
@@ -63,7 +63,7 @@ $gradient_checkpointing = 0 # https://huggingface.co/docs/transformers/perf_trai
 $gradient_accumulation_steps = 1 # https://huggingface.co/docs/transformers/perf_train_gpu_one#gradient-accumulation
 $max_data_loader_n_workers = 8 # Максимальное количество потоков процессора для DataLoader
                                # Чем меньше значение, тем меньше потребление RAM, быстрее старт эпохи и медленнее загрузка данных
-							   # Маленькое значение может негативно сказаться на скорости обучения
+                               # Маленькое значение может негативно сказаться на скорости обучения
 $save_precision = "fp16" # Использовать ли пользовательскую точность сохранения, и её тип. Возможные значения: no, float, fp16, bf16
 $mixed_precision = "fp16" # Использовать ли смешанную точность для обучения, и её тип. Возможные значения: no, fp16, bf16
 $do_not_interrupt = 0 # Не прерывать работу скрипта вопросами. По умолчанию включен если выполняется цепочка скриптов
@@ -78,7 +78,7 @@ $dont_draw_flags = 0 # Не рисовать флаги
 <# ##### Конец конфига ##### #>
 
 [console]::OutputEncoding = [text.encoding]::UTF8
-$current_version = "1.06"
+$current_version = "1.1"
 if ($do_not_clear_host -le 0) { Clear-Host } 
 
 function Is-Numeric ($value) { return $value -match "^[\d\.]+$" }
@@ -235,8 +235,6 @@ if ($is_structure_wrong -eq 0 -and $reg_dir -ne "") { Get-ChildItem -Path $reg_d
 		$iter += 1 }
 } } } }
 
-
-
 if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 {
 	Write-Output "Количество обучающих изображений с повторениями: $total"
@@ -344,7 +342,7 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 	if ($shuffle_caption -ge 1) { $run_parameters += " --shuffle_caption" }
 	$run_parameters += " --keep_tokens=$keep_tokens"
 	
-	# other settings
+	# additional
 	$run_parameters += " --device=`"$device`""
 	if ($gradient_checkpointing -ge 1) { $run_parameters += " --gradient_checkpointing"  }
 	if ($gradient_accumulation_steps -gt 1) { $run_parameters += " --gradient_accumulation_steps=$gradient_accumulation_steps" }
@@ -353,7 +351,7 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 	if ($save_precision -eq "float" -or $save_precision -eq "fp16" -or $save_precision -eq "bf16") { $run_parameters += " --save_precision=$save_precision" }
 	if ($logging_dir -ne "") { $run_parameters += " --logging_dir=`"$logging_dir`" --log_prefix=`"$output_name`"" }
 	if ($debug_dataset -ge 1) { $run_parameters += " --debug_dataset" }
-
+	
 	$run_parameters += " --caption_extension=`".txt`" --prior_loss_weight=1 --enable_bucket --min_bucket_reso=256 --max_bucket_reso=1024 --use_8bit_adam --xformers --save_model_as=safetensors --cache_latents"
 	
 	if ($TestRun -ge 1) { $test_run = 1 }
@@ -405,5 +403,5 @@ sleep 3
 
 if ($restart -eq 1) { powershell -File $PSCommandPath }
 
-#21.01.23
-#ver=1.06
+#22.01.23
+#ver=1.1

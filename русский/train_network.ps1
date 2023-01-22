@@ -1,5 +1,6 @@
 ﻿# LoRA retard-friendly train_network script v1.06 by anon
-# Последнее обновление: 21.01.23 01:09 по МСК
+# Последнее обновление: 22.01.23 20:17 по МСК
+# Актуально по состоянию на версию sd-scripts 0.4.0
 # https://github.com/cloneofsimo/lora
 # https://github.com/kohya-ss/sd-scripts
 # https://rentry.org/2chAI_LoRA_Dreambooth_guide
@@ -30,24 +31,26 @@ $save_last_n_epochs = 999 # Сохранить только последние N
 $max_token_length = 75 # Максимальная длина токена. Возможные значения: 75 / 150 / 225
 $clip_skip = 1 # Использовать вывод текстового энкодера с конца N-ного слоя
 
-# (опционально) Время тренировки
+# (опционально) Время обучения
 $desired_training_time = 0 # Если значение выше 0, игнорировать количество изображений с повторениями при вычислении количества шагов и обучать сеть в течении N минут
-$gpu_training_speed = "1.23it/s | 1.23s/it" # Средняя скорость тренировки, учитывая мощность GPU. Значение вида XX.XXit/s или XX.XXs/it
+$gpu_training_speed = "1.23it/s | 1.23s/it" # Средняя скорость обучения, учитывая вашу мощность GPU. Значение вида XX.XXit/s или XX.XXs/it
 
 # Настройки обучения
 $learning_rate = 1e-4 # Скорость обучения
-$unet_lr = $learning_rate # Скорость обучения U-Net
-$text_encoder_lr = $learning_rate # Скорость обучения текстового энкодера
+$unet_lr = 1e-4 # Скорость обучения U-Net
+$text_encoder_lr = 5e-5 # Скорость обучения текстового энкодера
 $scheduler = "linear" # Планировщик скорости обучения. Возможные значения: linear, cosine, cosine_with_restarts, polynomial, constant (по умолчанию), constant_with_warmup
 $lr_warmup_ratio = 0.0 # Отношение количества шагов разогрева планировщика к количеству шагов обучения (от 0 до 1). Не имеет силы при планировщике constant
-$network_dim = 128 # Размер нетворка. Чем больше значение, тем больше точность и размер выходного файла
+$network_dim = 128 # Размер (ранк) сети. Чем больше значение, тем больше точность и размер выходного файла
+$network_alpha = 1 # Альфа сети. Стандартное значение - 1
+				   # Если вы хотите повторить старое поведение скрипта (до версии sd-scripts 0.3.2), выставьте значение, равное network_dim (не рекомендуется, может вызвать антипереполнение весов)
 $is_random_seed = 1 # Сид обучения. 1 = рандомный сид, 0 = статичный
 $shuffle_caption = 1 # Перетасовывать ли теги в файлах описания, разделённых запятой
 $keep_tokens = 0 # Не перетасовывать первые N токенов при перемешивании описаний
 
 # Последовательный запуск скриптов
 # Здесь указываются пути, в которых находятся скрипты для последовательного выполнения
-# Путей может быть сколько угодно
+# Путей может быть сколько угодно (не забудьте убрать угловые скобки)
 $script_paths = @(
 	"<X:\Путь\к\скрипту\скрипт.ps1>",
 	"<.\скрипт.ps1>",
@@ -55,6 +58,7 @@ $script_paths = @(
 )
 
 # Дополнительные настройки
+$device = "cuda" # Какое устройство использовать для обучения. Возможные значения: cuda, cpu
 $gradient_checkpointing = 0 # https://huggingface.co/docs/transformers/perf_train_gpu_one#gradient-checkpointing
 $gradient_accumulation_steps = 1 # https://huggingface.co/docs/transformers/perf_train_gpu_one#gradient-accumulation
 $max_data_loader_n_workers = 8 # Максимальное количество потоков процессора для DataLoader
@@ -64,7 +68,7 @@ $save_precision = "fp16" # Использовать ли пользовател�
 $mixed_precision = "fp16" # Использовать ли смешанную точность для обучения, и её тип. Возможные значения: no, fp16, bf16
 $do_not_interrupt = 0 # Не прерывать работу скрипта вопросами. По умолчанию включен если выполняется цепочка скриптов
 $logging_dir = "" # (опционально) Папка для логов
-$log_prefix = $output_name
+$log_prefix = "${output_name}_"
 $debug_dataset = 0
 
 # Остальные настройки
@@ -323,6 +327,7 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 	$run_parameters += " --clip_skip=$clip_skip"
 	
 	# advanced
+	$run_parameters += " --learning_rate=$learning_rate"
 	if ($unet_lr -ne $learning_rate) { $run_parameters += " --unet_lr=$unet_lr" }
 	if ($text_encoder_lr -ne $learning_rate) { $run_parameters += " --text_encoder_lr=$text_encoder_lr" }
 	$run_parameters += " --lr_scheduler=$scheduler"
@@ -332,7 +337,7 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 		$lr_warmup_steps = [int]([math]::Round($max_train_steps * $lr_warmup_ratio))
 		$run_parameters += " --lr_warmup_steps=$lr_warmup_steps"
 	}
-	$run_parameters += " --network_dim=$network_dim"
+	$run_parameters += " --network_dim=$network_dim --network_alpha=$network_alpha"
 	if ($is_random_seed -le 0) { $seed = 1337 }
 	else { $seed = Get-Random }
 	$run_parameters += " --seed=$seed"
@@ -340,6 +345,7 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 	$run_parameters += " --keep_tokens=$keep_tokens"
 	
 	# other settings
+	$run_parameters += " --device=`"$device`""
 	if ($gradient_checkpointing -ge 1) { $run_parameters += " --gradient_checkpointing"  }
 	if ($gradient_accumulation_steps -gt 1) { $run_parameters += " --gradient_accumulation_steps=$gradient_accumulation_steps" }
 	$run_parameters += " --max_data_loader_n_workers=$max_data_loader_n_workers"
@@ -348,7 +354,7 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 	if ($logging_dir -ne "") { $run_parameters += " --logging_dir=`"$logging_dir`" --log_prefix=`"$output_name`"" }
 	if ($debug_dataset -ge 1) { $run_parameters += " --debug_dataset" }
 
-	$run_parameters += " --caption_extension=`".txt`" --prior_loss_weight=1 --enable_bucket --min_bucket_reso=256 --max_bucket_reso=1024 --learning_rate=$learning_rate --use_8bit_adam --xformers --save_model_as=safetensors --cache_latents"
+	$run_parameters += " --caption_extension=`".txt`" --prior_loss_weight=1 --enable_bucket --min_bucket_reso=256 --max_bucket_reso=1024 --use_8bit_adam --xformers --save_model_as=safetensors --cache_latents"
 	
 	if ($TestRun -ge 1) { $test_run = 1 }
 	

@@ -18,3 +18,11 @@
 ### 20.01.2023
 - kohya-ss пофиксил работу gradient checkpointing, соответственно добавлены новые переменные gradient_checkpointing и gradient_accumulation_steps
 - микрофиксы
+### v1.1
+### 22.01.2023
+- Приведён в актуальность на версию sd-scripts 0.4.0:
+  Новая переменная network_alpha
+  Новая переменная device
+- Внимание! 21.01.2023 был обнаружен критический баг. Подробнее в гайде:
+  https://rentry.org/2chAI_LoRA_Dreambooth_guide
+  

@@ -1,6 +1,6 @@
 # LoRA guide
 -> by anons <-
--> last update: 19.01.2023 UTC+3 <-
+-> last update: 22.01.2023 UTC+3 <-
 -> [**Русская версия**](https://rentry.org/2chAI_LoRA_Dreambooth_guide)<-
 ***
 [TOC2]
@@ -9,19 +9,19 @@
 	Consider joining the [discussions](https://github.com/anon-1337/LoRA-scripts/discussions) on GitHub if you have something useful to add.
 ***
 !!! warning WebUI native support
-	Jan 22, 2023 AUTOMATIC1111 added [native support]((https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/855b9e3d1c5a1bd8c2d815d38a38bc7c410be5a8)) for LoRA networks to the WebUI.
+	22.01.2023 AUTOMATIC1111 added [native support]((https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/855b9e3d1c5a1bd8c2d815d38a38bc7c410be5a8)) for LoRA networks to the WebUI.
 	But kohya-ss (the author of the script used in the guide) says that networks trained with the script version 0.4.0, as well as those trained based on SD 2.x checkpoints **do not work in WebUI yet**, and advises to train on the script version 0.3.2, or use his extension [sd-additional-networks.](https://github.com/kohya-ss/sd-webui-additional-networks)
 !!! danger Critical bug in kohya-ss/sd-scripts
-	[21.01.2023 a topic was raised about the bug causing underflow of layer weights during training (weights values close to zero were rounded to zero.)](https://github.com/kohya-ss/sd-webui-additional-networks/issues/49)
-	At the time of the update the bug was fixed: a new argument ``--network_alpha``` was added to prevent this behavior. **The new variable most likely needs a different ```learning_rate```** (the author of the script as a temporary solution offers a value of ```1e-3``` for ```network_dim = 128; network_alpha = 1```). Waiting for updates.
+	[21.01.2023 a topic was raised about the bug causing underflow of layer weights during training (weights values close to zero were rounded to zero).](https://github.com/kohya-ss/sd-webui-additional-networks/issues/49)
+	At the time of guide update the bug was fixed: a new argument ```--network_alpha``` was added to prevent this behavior. **The new variable most likely needs a different ```learning_rate```** (the author of the script as a temporary solution offers a value of ```1e-3``` for ```network_dim = 128; network_alpha = 1```). Waiting for updates.
 	[Script](https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9/train_network.ps1) was updated.
 	If you don't have trained LoRA network working (gives NaN error or no change in image) – update to sd-scripts version 0.4.0 or higher and retrain.
-	You can also check your old nets: there is check_lora_weights.py script in *sd-scripts\networks\** path. Example usage:
+	You can also check your old nets: there is *check_lora_weights.py* script in *sd-scripts\networks\\* directory. Example usage:
 	```powershell
 	.\venv\Scripts\activate```
 	```powershell
 	.\networks\check_lora_weights.py "X:\LoRA\LoRA_network.safetensors"```
-	**If you used ```Clip Skip = 2``` during training, the values of ```lora_te_text_model_encoder_layers_11_\*``` will be 0.0, this is normal. These layers are not trained at this value of Clip Skip.
+	**If you used ```Clip Skip = 2``` during training, the values of ```lora_te_text_model_encoder_layers_11_*``` will be 0.0, this is normal. These layers are not trained at this value of Clip Skip.
 ***
 ## What is LoRA?
 
@@ -40,7 +40,7 @@ There are currently two ways to use the LoRA network:
 2. Using sd-webui-additional-networks extension by kohya-ss
 3. Merge with SD checkpoint
 
-#### Method 2 – using in WebUI's prompt
+#### Method 1 – using in WebUI's prompt
 !!! danger Warning!
 	As of 22.01.2023 19:49 UTC+3 networks, trained on a version of sd-scripts 0.4.0, and also SD 2.x networks won't work this way.
 	Use method 2 instead.
@@ -261,7 +261,7 @@ This parameter is not applicable for *constant* scheduler.
     The safetensors files are not (yet) supported! Good news: ckpt can usually be downloaded from the same place where safetensors was downloaded.
 	
 Install the sd_dreambooth_extension from the Extensions tab, restart webui and turn it off afterwards.
-Download version  c5cb58328c555ac27679422b1da940a9b19de6f2 [here](http://c2n.me/4hArEi5.zip) or on [GitHub.](https://github.com/d8ahazard/sd_dreambooth_extension/tree/c5cb58328c555ac27679422b1da940a9b19de6f2)
+Download version c5cb58328c555ac27679422b1da940a9b19de6f2 [here](http://c2n.me/4hArEi5.zip) or on [GitHub.](https://github.com/d8ahazard/sd_dreambooth_extension/tree/c5cb58328c555ac27679422b1da940a9b19de6f2)
 Extract the contents of the folder sd_dreambooth_extension-c5cb58328c555ac27679422b1da940a9b19de6f2 into stable-diffusion-webui\extensions\sd_dreambooth_extension\ **(overwrite).**
 
 First, make sure that the checkpoint file we are going to study, <name>.ckpt is in the path *stable-diffusion-webui\models\Stable-diffusion\\*, then:

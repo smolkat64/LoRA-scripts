@@ -16,3 +16,6 @@
 ### v1.11
 ### 22.01.2023
 - hotfix device variable, it's not added actually
+### v1.12
+### 24.01.2023
+- QoL

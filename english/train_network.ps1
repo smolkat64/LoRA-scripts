@@ -1,4 +1,4 @@
-﻿# LoRA retard-friendly train_network script v1.11 by anon
+﻿# LoRA retard-friendly train_network script v1.12 by anon
 # Last update: 18.01.23 22:08 UTC+3
 # Up to date as of sd-scripts 0.4.0
 # https://github.com/cloneofsimo/lora
@@ -36,9 +36,8 @@ $desired_training_time = 0 # If greater than 0, ignore number of images with rep
 $gpu_training_speed = "1.23it/s | 1.23s/it" # Average training speed, depending on GPU. Possible values are XX.XXit/s or XX.XXs/it
 
 # Advanced variables
-$learning_rate = 1e-4 # Learning rate
-$unet_lr = 1e-4 # U-Net learning rate
-$text_encoder_lr = 5e-5 # Text encoder learning rate
+$unet_lr = 1e-3 # U-Net learning rate
+$text_encoder_lr = 1e-3 # Text encoder learning rate
 $scheduler = "linear" # Scheduler to use for learning rate. Possible values: linear, cosine, cosine_with_restarts, polynomial, constant (default), constant_with_warmup
 $lr_warmup_ratio = 0.0 # Ratio of warmup steps in the learning rate scheduler to total training steps (0 to 1)
 $network_dim = 128 # Size (rank) of network. Higher number = higher accuracy, output file size and VRAM usage
@@ -68,7 +67,7 @@ $save_precision = "fp16" # Whether to use custom precision for saving, and its t
 $mixed_precision = "fp16" # Whether to use mixed precision for training, and its type. Possible values: no, fp16, bf16
 $do_not_interrupt = 0 # Do not interrupt script on questionable moments. Enabled by default if running in a chain
 $logging_dir = "" # (optional)
-$log_prefix = "${output_name}_"
+$log_prefix = "$output_name" + "_"
 $debug_dataset = 0
 
 # Other settings
@@ -78,7 +77,7 @@ $dont_draw_flags = 0 # Do not render flags
 <# ##### Config end #####  #>
 
 [console]::OutputEncoding = [text.encoding]::UTF8
-$current_version = "1.11"
+$current_version = "1.12"
 if ($do_not_clear_host -le 0) { Clear-Host } 
 
 function Is-Numeric ($value) { return $value -match "^[\d\.]+$" }
@@ -318,9 +317,7 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 	$run_parameters += " --clip_skip=$clip_skip"
 	
 	# advanced
-	$run_parameters += " --learning_rate=$learning_rate"
-	if ($unet_lr -ne $learning_rate) { $run_parameters += " --unet_lr=$unet_lr" }
-	if ($text_encoder_lr -ne $learning_rate) { $run_parameters += " --text_encoder_lr=$text_encoder_lr" }
+	$run_parameters += " --unet_lr=$unet_lr --text_encoder_lr=$text_encoder_lr"
 	$run_parameters += " --lr_scheduler=$scheduler"
 	if ($scheduler -ne "constant") {
 		if ($lr_warmup_ratio -lt 0.0) { $lr_warmup_ratio = 0.0 }
@@ -328,7 +325,8 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 		$lr_warmup_steps = [int]([math]::Round($max_train_steps * $lr_warmup_ratio))
 		$run_parameters += " --lr_warmup_steps=$lr_warmup_steps"
 	}
-	$run_parameters += " --network_dim=$network_dim --network_alpha=$network_alpha"
+	$run_parameters += " --network_dim=$network_dim"
+	if ($network_alpha -ne 1) {  $run_parameters += " --network_alpha=$network_alpha" }
 	if ($is_random_seed -le 0) { $seed = 1337 }
 	else { $seed = Get-Random }
 	$run_parameters += " --seed=$seed"
@@ -397,4 +395,4 @@ sleep 3
 if ($restart -eq 1) { powershell -File $PSCommandPath }
 
 #22.01.23
-#ver=1.11
+#ver=1.12

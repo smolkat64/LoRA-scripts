@@ -17,9 +17,11 @@
 	[Script](https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9/train_network.ps1) was updated.
 	If you don't have trained LoRA network working (gives NaN error or no change in image) – update to sd-scripts version 0.4.0 or higher and retrain.
 	You can also check your old nets: there is *check_lora_weights.py* script in *sd-scripts\networks\\* directory. Example usage:
-	```.\venv\Scripts\activate```
-	```python .\networks\check_lora_weights.py "X:\LoRA\LoRA_network.safetensors"```
-	**Warning!** If you used ```Clip Skip = 2``` during training, the values of ```lora_te_text_model_encoder_layers_11_*``` will be 0.0, this is normal. These layers are not trained at this value of Clip Skip.
+	```powershell
+	.\venv\Scripts\activate```
+	```powershell
+	.\networks\check_lora_weights.py "X:\LoRA\LoRA_network.safetensors"```
+	**If you used ```Clip Skip = 2``` during training, the values of ```lora_te_text_model_encoder_layers_11_*``` will be 0.0, this is normal. These layers are not trained at this value of Clip Skip.
 ***
 ## What is LoRA?
 
@@ -259,7 +261,7 @@ This parameter is not applicable for *constant* scheduler.
     The safetensors files are not (yet) supported! Good news: ckpt can usually be downloaded from the same place where safetensors was downloaded.
 	
 Install the sd_dreambooth_extension from the Extensions tab, restart webui and turn it off afterwards.
-Download version  c5cb58328c555ac27679422b1da940a9b19de6f2 [here](http://c2n.me/4hArEi5.zip) or on [GitHub.](https://github.com/d8ahazard/sd_dreambooth_extension/tree/c5cb58328c555ac27679422b1da940a9b19de6f2)
+Download version c5cb58328c555ac27679422b1da940a9b19de6f2 [here](http://c2n.me/4hArEi5.zip) or on [GitHub.](https://github.com/d8ahazard/sd_dreambooth_extension/tree/c5cb58328c555ac27679422b1da940a9b19de6f2)
 Extract the contents of the folder sd_dreambooth_extension-c5cb58328c555ac27679422b1da940a9b19de6f2 into stable-diffusion-webui\extensions\sd_dreambooth_extension\ **(overwrite).**
 
 First, make sure that the checkpoint file we are going to study, <name>.ckpt is in the path *stable-diffusion-webui\models\Stable-diffusion\\*, then:

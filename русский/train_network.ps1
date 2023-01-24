@@ -1,5 +1,5 @@
-﻿# LoRA retard-friendly train_network script v1.11 by anon
-# Последнее обновление: 22.01.23 20:17 по МСК
+﻿# LoRA retard-friendly train_network script v1.13 by anon
+# Последнее обновление: 24.01.23
 # Актуально по состоянию на версию sd-scripts 0.4.0
 # https://github.com/cloneofsimo/lora
 # https://github.com/kohya-ss/sd-scripts
@@ -36,9 +36,9 @@ $desired_training_time = 0 # Если значение выше 0, игнори�
 $gpu_training_speed = "1.23it/s | 1.23s/it" # Средняя скорость обучения, учитывая вашу мощность GPU. Значение вида XX.XXit/s или XX.XXs/it
 
 # Настройки обучения
-$learning_rate = 1e-4 # Скорость обучения
-$unet_lr = 1e-4 # Скорость обучения U-Net
-$text_encoder_lr = 5e-5 # Скорость обучения текстового энкодера
+$learning_rate = 1e-3 # Скорость обучения
+$unet_lr = $learning_rate # Скорость обучения U-Net
+$text_encoder_lr = $learning_rate # Скорость обучения текстового энкодера
 $scheduler = "linear" # Планировщик скорости обучения. Возможные значения: linear, cosine, cosine_with_restarts, polynomial, constant (по умолчанию), constant_with_warmup
 $lr_warmup_ratio = 0.0 # Отношение количества шагов разогрева планировщика к количеству шагов обучения (от 0 до 1). Не имеет силы при планировщике constant
 $network_dim = 128 # Размер (ранк) сети. Чем больше значение, тем больше точность и размер выходного файла
@@ -68,7 +68,7 @@ $save_precision = "fp16" # Использовать ли пользовател�
 $mixed_precision = "fp16" # Использовать ли смешанную точность для обучения, и её тип. Возможные значения: no, fp16, bf16
 $do_not_interrupt = 0 # Не прерывать работу скрипта вопросами. По умолчанию включен если выполняется цепочка скриптов
 $logging_dir = "" # (опционально) Папка для логов
-$log_prefix = "${output_name}_"
+$log_prefix = "$output_name" + "_"
 $debug_dataset = 0
 
 # Остальные настройки
@@ -78,7 +78,7 @@ $dont_draw_flags = 0 # Не рисовать флаги
 <# ##### Конец конфига ##### #>
 
 [console]::OutputEncoding = [text.encoding]::UTF8
-$current_version = "1.11"
+$current_version = "1.13"
 if ($do_not_clear_host -le 0) { Clear-Host } 
 
 function Is-Numeric ($value) { return $value -match "^[\d\.]+$" }
@@ -335,7 +335,8 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 		$lr_warmup_steps = [int]([math]::Round($max_train_steps * $lr_warmup_ratio))
 		$run_parameters += " --lr_warmup_steps=$lr_warmup_steps"
 	}
-	$run_parameters += " --network_dim=$network_dim --network_alpha=$network_alpha"
+	$run_parameters += " --network_dim=$network_dim"
+	if ($network_alpha -ne 1) { $run_parameters += " --network_alpha=$network_alpha" }
 	if ($is_random_seed -le 0) { $seed = 1337 }
 	else { $seed = Get-Random }
 	$run_parameters += " --seed=$seed"
@@ -403,5 +404,5 @@ sleep 3
 
 if ($restart -eq 1) { powershell -File $PSCommandPath }
 
-#22.01.23
-#ver=1.11
+#24.01.23
+#ver=1.13

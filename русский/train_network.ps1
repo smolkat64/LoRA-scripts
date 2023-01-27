@@ -350,7 +350,7 @@ if ($is_structure_wrong -eq 0 -and $abort_script -ne "y")
 	$run_parameters += " --max_data_loader_n_workers=$max_data_loader_n_workers"
 	if ($mixed_precision -eq "fp16" -or $mixed_precision -eq "bf16") { $run_parameters += " --mixed_precision=$mixed_precision" }
 	if ($save_precision -eq "float" -or $save_precision -eq "fp16" -or $save_precision -eq "bf16") { $run_parameters += " --save_precision=$save_precision" }
-	if ($logging_dir -ne "") { $run_parameters += " --logging_dir=`"$logging_dir`" --log_prefix=`"$output_name`"" }
+	if ($logging_dir -ne "") { $run_parameters += " --logging_dir=`"$logging_dir`" --log_prefix=`"$log_prefix`"" }
 	if ($debug_dataset -ge 1) { $run_parameters += " --debug_dataset" }
 	
 	$run_parameters += " --caption_extension=`".txt`" --prior_loss_weight=1 --enable_bucket --min_bucket_reso=256 --max_bucket_reso=1024 --use_8bit_adam --xformers --save_model_as=safetensors --cache_latents"

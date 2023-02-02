@@ -1,6 +1,6 @@
 # LoRA guide
 -> by anons <-
--> last update: 22.01.2023 UTC+3 <-
+-> last update: 02.02.2023 UTC+3 <-
 -> [**Русская версия**](https://rentry.org/2chAI_LoRA_Dreambooth_guide)<-
 ***
 [TOC2]
@@ -10,16 +10,26 @@
 ***
 !!! warning WebUI native support
 	22.01.2023 AUTOMATIC1111 added [native support]((https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/855b9e3d1c5a1bd8c2d815d38a38bc7c410be5a8)) for LoRA networks to the WebUI.
-	But kohya-ss (the author of the script used in the guide) says that networks trained with the script version 0.4.0, as well as those trained based on SD 2.x checkpoints **do not work in WebUI yet**, and advises to train on the script version 0.3.2, or use his extension [sd-additional-networks.](https://github.com/kohya-ss/sd-webui-additional-networks)
+	But kohya-ss (the author of the script used in the guide) says that networks trained with the script version 0.4.0, as well as those trained based on SD 2.x checkpoints **do not work in WebUI yet**, and advises to train on the script version 0.3.2, or use his extension [sd-additional-networks](https://github.com/kohya-ss/sd-webui-additional-networks).
+	**upd. 0.4.0 networks are working now (but not SD 2.x networks)**
 !!! danger Critical bug in kohya-ss/sd-scripts
 	[21.01.2023 a topic was raised about the bug causing underflow of layer weights during training (weights values close to zero were rounded to zero).](https://github.com/kohya-ss/sd-webui-additional-networks/issues/49)
-	At the time of guide update the bug was fixed: a new argument ```--network_alpha``` was added to prevent this behavior. **The new variable most likely needs a different ```learning_rate```** (the author of the script as a temporary solution offers a value of ```1e-3``` for ```network_dim = 128; network_alpha = 1```). Waiting for updates.
+	At the time of guide update the bug was fixed: a new argument ```--network_alpha``` was added to prevent this behavior. **The new variable most likely needs a different ```learning_rate```** (the author of the script as a temporary solution offers a value of ```1e-3``` for ```network_dim = 128; network_alpha = 1```).
 	[Script](https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9/train_network.ps1) was updated.
 	If you don't have trained LoRA network working (gives NaN error or no change in image) – update to sd-scripts version 0.4.0 or higher and retrain.
 	You can also check your old nets: there is *check_lora_weights.py* script in *sd-scripts\networks\\* directory. Example usage:
 	```.\venv\Scripts\activate```
 	```python .\networks\check_lora_weights.py "X:\LoRA\LoRA_network.safetensors"```
 	**Warning!** If you used ```Clip Skip = 2``` during training, the values of ```lora_te_text_model_encoder_layers_11_*``` will be 0.0, this is normal. These layers are not trained at this value of Clip Skip.
+***
+You might want to check other guides by anons:
+
+https://rentry.org/lora_train
+https://rentry.org/beginners-lora-training-params
+https://rentry.org/lora-tag-faq
+https://rentry.org/lora-training-science
+https://rentry.org/LazyTrainingGuide
+
 ***
 ## What is LoRA?
 
@@ -40,7 +50,7 @@ There are currently two ways to use the LoRA network:
 
 #### Method 1 – using in WebUI's prompt
 !!! danger Warning!
-	As of 22.01.2023 19:49 UTC+3 networks, trained on a version of sd-scripts 0.4.0, and also SD 2.x networks won't work this way.
+	As of 02.02.2023 UTC+3 SD 2.x networks won't work this way.
 	Use method 2 instead.
 	
 1. Click **Show extra networks** and open **Lora** tab, choose network | 2. LoRA will show up in prompt (edit the value ```:``` to change weight)
@@ -48,7 +58,6 @@ There are currently two ways to use the LoRA network:
 ![](https://i.imgur.com/Jl6oUJg.png) | ![](https://i.imgur.com/ohIJxWu.png)
 
 #### Method 2 – using sd-webui-additional-networks extension
-!!! note As of 22.01.2023 19:49 UTC+3 this is the recommended way to use the LoRA.
 Install [extension by kohya-ss](https://github.com/kohya-ss/sd-webui-additional-networks) for A1111-webui.
 By default, network files are stored in the *stable-diffusion-webui\models\lora\\* directory.
 It's easy to use:
@@ -85,8 +94,8 @@ First, make sure that the checkpoint file *<model_name>.ckpt* is in the *stable-
     All the bits of other people's limbs, strange objects in the picture, artists' signatures, links – anything you **don't** want to see in the generation is better trimmed or masked in image editor.
 !!! info Advice #4 – speeding up the workflow
 	Make the machines do the hard work.
-    To speed up manual tagging you can use [sd-tagging-helper](https://github.com/arenatemp/sd-tagging-helper/).
-	There is also [separate software](https://github.com/starik222/BooruDatasetTagManager) and extensions ([1](https://github.com/toshiaki1729/stable-diffusion-webui-dataset-tag-editor), [2](https://github.com/toriato/stable-diffusion-webui-wd14-tagger), [3](https://github.com/SesuMoe/sd-tagger-webui)) for A1111-webui.
+    To speed up manual tagging you can use [sd-tagging-helper](https://github.com/arenatemp/sd-tagging-helper/) and [BooruDatasetTagManager](https://github.com/starik222/BooruDatasetTagManager).
+	There are also extensions ([1](https://github.com/toshiaki1729/stable-diffusion-webui-dataset-tag-editor), [2](https://github.com/toriato/stable-diffusion-webui-wd14-tagger), [3](https://github.com/SesuMoe/sd-tagger-webui)) for A1111-webui.
 	You can use [Grabber](https://github.com/Bionus/imgbrd-grabber/releases) with [these settings](https://i.imgur.com/VH5HOcQ.png) (copy and paste: ```%all:unsafe,separator=^,^ %```) to download images from various booru boards along with tags.
 	
 ***
@@ -138,12 +147,15 @@ The presence of underscores in the tags does not matter, but since they consume 
 2. Download [script (RMB -> "Save As...")](https://raw.githubusercontent.com/anon-1337/LoRA-scripts/main/english/train_network.ps1) (updates occasionally)
 !!! info PowerShell
 	This script is for PowerShell, but that does not mean that it is only available to users of the latest versions of Windows. Not everyone knows this, but [PowerShell is available for all versions of Windows starting with XP, on Linux, and on macOS](https://github.com/PowerShell/PowerShell/releases).
+	Also if you have old PowerShell version, you might want to update it.
 3. Open PowerShell and execute the following commands one by one:
 ```powershell
-Set-Location <path to sd-scripts>
+cd <path to sd-scripts>
 
-python -m venv venv      # Create a virtual environment
-.\venv\Scripts\activate  # Activate it
+# Create a virtual environment
+python -m venv venv
+# Activate it
+.\venv\Scripts\activate
 
 # Install torch and torchvision, xformers, and the necessary dependencies
 pip install torch==1.12.1+cu116 torchvision==0.13.1+cu116 --extra-index-url https://download.pytorch.org/whl/cu116
@@ -187,7 +199,7 @@ $max_token_length = 75
 $clip_skip = 1
 ```
 
-**$train_batch_size**: if you increase this value, it probably also requires [increasing *$learning_rate*](https://github.com/cloneofsimo/lora/discussions/53#discussioncomment-4437440).
+**$train_batch_size**: if you increase this value, you might also want [increase *$learning_rate*](https://github.com/cloneofsimo/lora/discussions/53#discussioncomment-4437440). Use linear rule: **learning_rate** for batch size 1 \* your **batch_size** = new **learning_rate**.
 **$num_epochs**: This variable is used to calculate the number of training steps. The more epochs, the longer it takes to train the network. As for the result on large and small values, see the description of the *$learning_rate* variable. There is no universal answer to how much to set.
 **$max_token_length**: open your largest description file, copy its contents and put it into the WebUI Promt. The counter on the right will display the length of the token. If less than 75, put 75. If more than 75 – put 150. If greater than 150, then put 225. Values greater than 225 are not supported by the script (yet).
 **$clip_skip**: 1 for SD-based checkpoints, 2 for NAI-based checkpoints.
@@ -196,56 +208,59 @@ $clip_skip = 1
 $learning_rate = 1e-4
 $unet_lr = $learning_rate
 $text_encoder_lr = $learning_rate
-$scheduler = "cosine_with_restarts"
+$scheduler = "linear"
 $save_precision = "fp16"
 $mixed_precision = "fp16"
 $network_dim = 128
+$network_alpha = 1
 ```
 
-**$learning_rate**: 1e-4 is recommended for checkpoints based on SD 1.x. For 2.x - it is unclear, someone says that [got terrible results with these settings](https://github.com/d8ahazard/sd_dreambooth_extension/issues/486#issuecomment-1345884109). But I got decent faces at the recommended settings as well.
+**$learning_rate**: "master knob" for both UNet and text encoder learning rates, if they are not specified. 1e-4 is recommended for checkpoints based on SD 1.x. For 2.x - it is unclear, someone says that [got terrible results with these settings](https://github.com/d8ahazard/sd_dreambooth_extension/issues/486#issuecomment-1345884109). But I got decent faces at the recommended settings as well.
 
 What is the difference between high and low speed? 
-- the low rate and low number of steps will cause the network to be underfit. The network will have problems reproducing the concept.
-- high speed and quantity lead to an overfit network. You won't be able to generate anything but a concept, regardless of the promt you use.
+- the low rate and low number of steps will cause the network to be underfit/undertrained. The network will have problems reproducing the concept.
+- high speed and quantity lead to an overfit/overtrained network. You won't be able to generate anything but a concept, regardless of the promt you use. Also there's a risk of artifacts on generated image.
 
 There is a [website](https://losslandscape.com/explorer) with a clear demonstration.
 The following are grids comparing different *learning_rate*. All networks were trained on the same [dataset](https://drive.google.com/drive/folders/1JjIV61fMUyJKYOxZpYokx7cd81awtBWc) ([pixiv of the author](https://www.pixiv.net/en/users/32808113)), all images were generated on the same seed with different prompt. Note how the networks at different settings learned the following tags: *harusameriburo* (artist style), *jacket*, *cloudy sky*, *shoes*, *ligne claire*, *backpack*, *blush stickers*.
 ![](https://files.catbox.moe/dh3c0w.png)
--> learning_rate = **X**, unet_lr = learning_rate, text_encoder_lr = learning_rate, scheduler = linear <-
+-> learning_rate = **X**, scheduler = linear <-
 
-**$unet_lr**: U-Net learning rate. U-Net is responsible for converting noise into an image. [Field for experimentation](https://github.com/cloneofsimo/lora/discussions/69).
+**$unet_lr**: U-Net learning rate. U-Net is responsible for converting noise into an image. [Field for experimentation](https://github.com/cloneofsimo/lora/discussions/69). Supercedes **learning_rate** value.
 ![](https://files.catbox.moe/wmue60.png)
--> learning_rate = 1e-4, unet_lr = **X**, text_encoder_lr = learning_rate, scheduler = linear <-
+-> unet_lr = **X**, text_encoder_lr = 1e-4, scheduler = linear <-
 
-**$text_encoder_lr**: the learning rate of the CLIP text encoder. Thanks to the text encoder the image corresponds to the text description. There is an opinion that it is worth halving the learning rate of the text encoder relative to *learning_rate* (i.e. to a value of 5e-5) to improve the final result. There is also information that teaching the text encoder is [beneficial to faces](https://huggingface.co/blog/dreambooth#fine-tuning-the-text-encoder). Field for experimentation.
+**$text_encoder_lr**: the learning rate of the CLIP text encoder. Thanks to the text encoder the image corresponds to the text description. You might want to set this value 5-10 times less than **unet_lr**. There is information that teaching the text encoder is [beneficial to faces](https://huggingface.co/blog/dreambooth#fine-tuning-the-text-encoder). Field for experimentation. Supercedes **learning_rate** value.
 ![](https://files.catbox.moe/py6lq3.png)
--> learning_rate = 1e-4, unet_lr = learning_rate, text_encoder_lr = **X**, scheduler = linear <-
+-> unet_lr = 1e-4, text_encoder_lr = **X**, scheduler = linear <-
 
 **$scheduler** is the *learning_rate* curve scheduler:
 
-- [constant](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Constant-Schedule): learning rate does not change in time from the beginning to the end of learning. The only scheduler that does not use the variable *lr_warmup_ratio*. ==Default scheduler==.
+- [constant](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Constant-Schedule): learning rate does not change in time from the beginning to the end of learning. The only scheduler that does not use the variable *lr_warmup_ratio*. ==Default scheduler==. There's information that LoRA [suffers from constant rate](https://github.com/cloneofsimo/lora/discussions/69).
 
 All other schedulers use the variable *lr_warmup_ratio* and have the following wording:
 After a warmup period lasting *lr_warmup_ratio%* steps, during which the learning rate increases linearly between 0 and *learning_rate*...
 - [linear](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Linear-Schedule-with-Warmup): the learning rate decreases linearly from the *learning_rate* value to 0.
 - [cosine](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Cosine-with-Warmup): the learning rate decreases following the value of the cosine function between *learning_rate* and 0.
 - [cosine_with_restarts](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Cosine-With-Hard-Restarts): the learning rate decreases following the value of the cosine function between *learning_rate* and 0, with a few hard restarts.
-- [polynomial](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Polynomial-Decay-with-Warmup): the learning rate decreases as a polynomial decay from the *learning_rate* value to a value of 1e-7.
+- [polynomial](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Polynomial-Decay-with-Warmup): the learning rate decreases as a polynomial decay from the *learning_rate* value to a value of 0.
 - [constant_with_warmup](https://www.kaggle.com/code/rhtsingh/guide-to-huggingface-schedulers-differential-lrs#Constant-Schedule-with-Warmup): behaves like **constant**.
 
 ![](https://files.catbox.moe/pp1zdz.png)
--> learning_rate = 1e-4, unet_lr = learning_rate, text_encoder_lr = learning_rate, scheduler = **X** <-
+-> learning_rate = 1e-4, scheduler = **X** <-
 
 **$lr_warmup_ratio**: the percentage of steps starting from the first, during which the learning rate increases linearly from 0 to the *learning_rate* value. Small values or 0 allow you to capture a lot of information at the beginning of training and move on to finer "refinement" by the end. Values larger can help with the problem when the network [overfits very quickly at the beginning of training](https://stackoverflow.com/a/55942518). Here you need to experiment, dataset plays a very important role.
 This parameter is not applicable for *constant* scheduler.
 
-**$network_dim**: values can be different (I saw someone training at 1024), but it was found that values above 128/256 do not make a big difference. The higher the value, the higher the video memory consumption and output file size.
+**$network_dim**: rank of the network, tells how much parameters of UNet and text encoder to train. Values can be different (I saw someone training at 1024), but it was found that values above 128 do not make a big difference. The more parameters you train, the higher the VRAM consumption and output file size. You can go as low as 1.
+
+**$network_alpha**: added in version 0.4.0 of sd-scripts. Alpha (?) of the network. Scales output weights, multiplying them by (**network_alpha**/**network_dim**). Default value of 1 might be too low for your network.
 
 **$save_precision, $mixed_precision**: As said before, bf16 > fp16, so if your hardware allows it, go for it.
 
 **$keep_tokens**: if the option to shuffle text descriptions is enabled, this variable allows to protect the first *keep_tokens* tokens from shuffling.
 !!! note Advice
-	Open [list of all unique single-token words up to 4 characters](https://github.com/2kpr/dreambooth-tokens/blob/main/all_single_tokens_to_4_characters.txt), select any of them (for the character *Tomoe Koga* I found a successful token *tk*, for example), remove the full character name from all descriptions, insert in all descriptions the very first tag token you chose. Set *shuffle_captions = 1*, *keep_tokens = 1*. You are awesome.
+	Open [list of all unique single-token words up to 4 characters](https://github.com/2kpr/dreambooth-tokens/blob/main/all_single_tokens_to_4_characters.txt), select any of them (for the character *Tomoe Koga* I found a successful token *tk*, for example), remove the full character name from all descriptions, insert in all descriptions the very first tag token you chose. Set *shuffle_captions = 1*, *keep_tokens = 1*. This will prevent from training on an existing tag and save some tokens.
 
 6. Running the script
 !!! note If it does not launch by double-clicking
